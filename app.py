@@ -15,8 +15,8 @@ from config import (
     ERROR_GENERATING_RESPONSE_MESSAGE,
     CHAT_ROLE_USER,
     CHAT_ROLE_AI,
-    PROGRESS_BUTTON_LABEL,
-    PROGRESS_PLACEHOLDER_MESSAGE
+    PROGRESS_ICON_NAME,
+    PROGRESS_TOOLTIP
 )
 from database import init_db, activity_log, retrieve_relevant_terms, get_progress_summary # Import get_progress_summary
 from data_loader import load_terms_from_yaml
@@ -32,15 +32,21 @@ load_terms_from_yaml()
 
 # --- Chainlit Event Handlers --- #
 
-# Define the action list globally or recreate it where needed
-progress_action = Action(name="show_progress", value="show", label=PROGRESS_BUTTON_LABEL, payload={})
+# Define progress action globally
+progress_action = Action(
+    name="show_progress",
+    value="show",
+    icon=PROGRESS_ICON_NAME,
+    tooltip=PROGRESS_TOOLTIP,
+    payload={}
+)
 
 @cl.on_chat_start
 async def start_chat():
-    """Initializes the chat session and adds the progress button."""
+    """Initializes the chat session and adds actions."""
     cl.user_session.set(SESSION_KEY_CHAT_HISTORY, [])
     cl.user_session.set(SESSION_KEY_LAST_EVAL_FEEDBACK, INITIAL_EVAL_FEEDBACK)
-    # Add the progress button to the welcome message
+    # Add only the progress action to the welcome message
     await cl.Message(content=WELCOME_MESSAGE, actions=[progress_action]).send()
 
 # --- Action Callback for Progress Button --- #
@@ -107,6 +113,9 @@ async def main(message: cl.Message):
 
     # --- 4. Generate Main Response using the Chain --- #
     final_response = LLM_DISABLED_MESSAGE
+    # Only include progress action by default
+    actions_for_response = [progress_action]
+
     if main_chain: # Check if the main chain instance exists
         try:
             print("Invoking main conversational chain...")
@@ -118,7 +127,7 @@ async def main(message: cl.Message):
                 "evaluation_feedback": previous_evaluation_feedback # Pass the *previous* turn's feedback
             }
 
-            # Send the final message WITH the action button
+            # Send the initial message WITH only the progress action
             msg = cl.Message(content="", actions=[progress_action])
             await msg.send()
 
@@ -126,16 +135,19 @@ async def main(message: cl.Message):
                 await msg.stream_token(chunk)
 
             final_response = msg.content
+
+            # Update the message content and actions (only progress action)
+            msg.actions = actions_for_response
             await msg.update()
 
         except Exception as e:
             print(f"Error invoking main chain: {e}")
             final_response = ERROR_GENERATING_RESPONSE_MESSAGE
-            # Send error message WITH the action button
-            await cl.Message(content=final_response, actions=[progress_action]).send()
+            # Send error message WITH only progress action
+            await cl.Message(content=final_response, actions=actions_for_response).send()
     else:
-        # Send disabled message WITH the action button
-        await cl.Message(content=final_response, actions=[progress_action]).send()
+        # Send disabled message WITH only progress action
+        await cl.Message(content=final_response, actions=actions_for_response).send()
 
     # --- Update Chat History --- #
     chat_history.append({"role": CHAT_ROLE_USER, "content": user_message_content})
