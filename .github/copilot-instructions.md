@@ -8,6 +8,12 @@ The application will contain a curriculum, defined as a structured text file, wi
 
 The LLM will select subjects to converse about from the lesson plan, focusing on areas where the user does not yet exhibit proficiency. It will also attempt to gently guide conversations, through use of follow-up questions, towards areas where the user needs more practice.
 
+**Role of RAG (Retrieval-Augmented Generation):**
+The RAG component is crucial for the tutoring aspect. Its primary purposes are:
+1.  **Contextual Term Introduction:** Retrieve relevant terms and definitions based on the conversational context. This allows the LLM to naturally introduce and use the target vocabulary the student needs to learn.
+2.  **Informed Evaluation:** Provide the LLM with the specific terms and definitions related to the current conversation turn. This context helps the LLM more accurately assess whether the user demonstrates comprehension and correct usage of the terms in the second language.
+3.  **Supporting Adaptive Learning:** While topic selection (e.g., via Thompson Sampling) guides the overall focus, the retrieved terms ensure the conversation within that topic remains grounded in the specific vocabulary being taught.
+
 # SOFTWARE STACK
 
 The application is built in LangChain with Chainlit as a frontend.
@@ -30,7 +36,7 @@ Current step to implement: #6
 3.  ~~**Initialize Database:** Add code to initialize the SQLite database (`lexifocus.db`) and create necessary tables (`domain_embeddings`, `activity_log`) when the application starts.~~
 4.  ~~**Compile Terms:** Create a CSV or YAML file (`terms.yaml` or `terms.csv`) containing 50-100 Swedish economics term definitions.~~
 5.  ~~**Embed and Load Terms:** Implement logic (e.g., in a setup function or on startup) to read the term definitions, generate embeddings using a suitable model (e.g., from LangChain Embeddings), and store both the terms and their embeddings in the `domain_embeddings` table.~~
-6.  **Implement Retrieval:** In the main chat logic, before calling the LLM, add code to query the SQLite database for the top 3 most relevant term definitions based on the current chat history/context, using vector similarity search on the embeddings. Integrate these retrieved terms into the context provided to the LLM.
+6.  **Implement Retrieval:** In the main chat logic, before calling the LLM, add code to query the SQLite database for the top 3 most relevant term definitions based on the current chat history/context, using vector similarity search on the embeddings. Integrate these retrieved terms into the context provided to the LLM *to facilitate contextual term introduction and support evaluation*.
 7.  **Define Logging Function:** Create a helper function `activity_log(topic, success)` that takes a topic name and a boolean success indicator, and inserts a corresponding record into the `activity_log` table in SQLite.
 8.  **Evaluate Turn Success:** After receiving the user's message and before generating the main response, make a separate call to the configured LLM. This call should analyze the user's last message in the context of the `selected_topic_for_turn`. The LLM's task is to determine if the user demonstrated **progress (success)**, **setback (failure)**, or **no significant change** regarding the topic.
 9.  **Log Outcome:** Call the `activity_log` function with the determined topic and the success/failure outcome from the previous step. Incorporate brief feedback based on this evaluation into the system prompt or context for the *next* main chat turn.
