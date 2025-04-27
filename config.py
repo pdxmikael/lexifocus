@@ -32,6 +32,8 @@ WELCOME_MESSAGE = "Welcome to LexiFocus! Let's start learning."
 NO_RELEVANT_TERMS_MESSAGE = "No relevant terms found."
 LLM_DISABLED_MESSAGE = "Sorry, the main chat functionality is currently disabled as the LLM is not configured."
 ERROR_GENERATING_RESPONSE_MESSAGE = "An error occurred while generating the response."
+PROGRESS_BUTTON_LABEL = "Show Progress"
+PROGRESS_PLACEHOLDER_MESSAGE = "Progress view is not fully implemented yet."
 
 # Chat Roles
 CHAT_ROLE_USER = "human"

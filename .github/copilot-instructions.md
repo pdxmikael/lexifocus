@@ -29,7 +29,7 @@ The application is developed on VSCode on Windows within a virtual Python enviro
 
 # DEVELOPMENT PLAN
 
-Current step to implement: #12
+Current step to implement: #13
 
 1.  ~~**Set up Project Structure:** Create the basic project structure for a LangChain/Chainlit application, including `app.py` (or similar main file), configuration files, and directories for data and database.~~
 2.  ~~**Implement Basic Chainlit App:** In `app.py`, set up a minimal Chainlit application with basic chat functionality using LangChain.~~
@@ -42,7 +42,7 @@ Current step to implement: #12
 9.  ~~**Define Logging Function:** Create a helper function `activity_log(topic, success)` that takes a topic name and a boolean success indicator, and inserts a corresponding record into the `activity_log` table in SQLite.~~
 10. ~~**Evaluate Turn Success:** After receiving the user's message and before generating the main response, make a separate call to the configured LLM. This call should analyze the user's last message in the context of the `selected_topic_for_turn`. The LLM's task is to determine if the user demonstrated **progress (success)**, **setback (failure)**, or **no significant change** regarding the topic.~~
 11. ~~**Log Outcome:** Call the `activity_log` function with the determined topic and the success/failure outcome from the previous step.~~
-12. **Incorporate Evaluation Feedback:** Incorporate brief feedback based on the evaluation result (progress/setback/no_change from Step 10) into the system prompt or context provided to the main LLM (Step 8) for the *next* chat turn. This helps guide the LLM's response style or focus.
+12. ~~**Incorporate Evaluation Feedback:** Incorporate brief feedback based on the evaluation result (progress/setback/no_change from Step 10) into the system prompt or context provided to the main LLM (Step 8) for the *next* chat turn. This helps guide the LLM's response style or focus.~~
 13. **Create Progress View:** Add a button within the Chainlit UI to display user progress.
 14. **Implement Progress Logic:** Code the logic behind the progress view to query the `activity_log` table, calculate progress metrics (like percentage accuracy per topic), and display this data in the Chainlit interface.
 15. **(Optional) Visualize Progress:** Enhance the progress view using Chainlit's visualization elements or by integrating a library like Matplotlib/Plotly if needed.

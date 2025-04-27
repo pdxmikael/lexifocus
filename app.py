@@ -1,4 +1,5 @@
 import chainlit as cl
+from chainlit.action import Action # Import Action
 
 # Import necessary functions and objects from the new modules
 from config import (
@@ -13,9 +14,11 @@ from config import (
     LLM_DISABLED_MESSAGE,
     ERROR_GENERATING_RESPONSE_MESSAGE,
     CHAT_ROLE_USER,
-    CHAT_ROLE_AI
+    CHAT_ROLE_AI,
+    PROGRESS_BUTTON_LABEL,
+    PROGRESS_PLACEHOLDER_MESSAGE
 )
-from database import init_db, activity_log, retrieve_relevant_terms
+from database import init_db, activity_log, retrieve_relevant_terms, get_progress_summary # Import get_progress_summary
 from data_loader import load_terms_from_yaml
 from models import llm, evaluation_llm # Import LLM instances
 from chains import main_chain, evaluate_turn_success # Import chains and evaluation function
@@ -29,13 +32,37 @@ load_terms_from_yaml()
 
 # --- Chainlit Event Handlers --- #
 
+# Define the action list globally or recreate it where needed
+progress_action = Action(name="show_progress", value="show", label=PROGRESS_BUTTON_LABEL, payload={})
+
 @cl.on_chat_start
 async def start_chat():
-    """Initializes the chat session."""
-    # Initialize chat history and evaluation feedback in the session
+    """Initializes the chat session and adds the progress button."""
     cl.user_session.set(SESSION_KEY_CHAT_HISTORY, [])
-    cl.user_session.set(SESSION_KEY_LAST_EVAL_FEEDBACK, INITIAL_EVAL_FEEDBACK) # Initialize feedback
-    await cl.Message(content=WELCOME_MESSAGE).send()
+    cl.user_session.set(SESSION_KEY_LAST_EVAL_FEEDBACK, INITIAL_EVAL_FEEDBACK)
+    # Add the progress button to the welcome message
+    await cl.Message(content=WELCOME_MESSAGE, actions=[progress_action]).send()
+
+# --- Action Callback for Progress Button --- #
+
+@cl.action_callback("show_progress")
+async def on_show_progress(action: Action):
+    """Handles the click event for the 'Show Progress' button."""
+    print(f"Action triggered: {action.name}")
+    # TODO: Implement Step 14 - Fetch and display actual progress
+    progress_summary = get_progress_summary()
+    if not progress_summary:
+        await cl.Message(content="No progress data available yet.").send()
+        return
+
+    # Format the summary for display
+    content = "## Your Progress:\n\n"
+    for topic, data in progress_summary.items():
+        content += f"**{topic}:** {data['successful_attempts']}/{data['total_attempts']} attempts ({data['success_rate']} % success)\n"
+
+    await cl.Message(content=content).send()
+    # Remove the button after displaying progress (optional)
+    # await action.remove()
 
 @cl.on_message
 async def main(message: cl.Message):
@@ -91,7 +118,8 @@ async def main(message: cl.Message):
                 "evaluation_feedback": previous_evaluation_feedback # Pass the *previous* turn's feedback
             }
 
-            msg = cl.Message(content="")
+            # Send the final message WITH the action button
+            msg = cl.Message(content="", actions=[progress_action])
             await msg.send()
 
             async for chunk in main_chain.astream(chain_input):
@@ -103,9 +131,11 @@ async def main(message: cl.Message):
         except Exception as e:
             print(f"Error invoking main chain: {e}")
             final_response = ERROR_GENERATING_RESPONSE_MESSAGE
-            await cl.Message(content=final_response).send()
+            # Send error message WITH the action button
+            await cl.Message(content=final_response, actions=[progress_action]).send()
     else:
-        await cl.Message(content=final_response).send()
+        # Send disabled message WITH the action button
+        await cl.Message(content=final_response, actions=[progress_action]).send()
 
     # --- Update Chat History --- #
     chat_history.append({"role": CHAT_ROLE_USER, "content": user_message_content})
