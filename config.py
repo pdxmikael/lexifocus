@@ -36,7 +36,10 @@ ERROR_GENERATING_RESPONSE_MESSAGE = "An error occurred while generating the resp
 # PROGRESS_BUTTON_LABEL = "Show Progress" # No longer needed if using icon only
 PROGRESS_PLACEHOLDER_MESSAGE = "Progress view is not fully implemented yet."
 PROGRESS_ICON_NAME = "bar-chart-horizontal" # Lucide icon name
-PROGRESS_TOOLTIP = "Show Progress" # Tooltip for the icon button
+PROGRESS_TOOLTIP = "Show Progress"  # Tooltip for the icon button
+
+# UI Labels
+TOPIC_LABEL = "Ämne"  # Swedish label for the current focus topic header
 
 # Chat Roles
 CHAT_ROLE_USER = "human"

@@ -3,7 +3,7 @@ from chainlit.action import Action # Import Action
 
 # Import necessary functions and objects from the new modules
 from config import (
-    OPENAI_API_KEY, # Check if LLM is configured
+    OPENAI_API_KEY,  # Check if LLM is configured
     SESSION_KEY_CHAT_HISTORY,
     SESSION_KEY_LAST_EVAL_FEEDBACK,
     SESSION_KEY_CURRENT_TOPIC,  # Current topic session key
@@ -17,7 +17,8 @@ from config import (
     CHAT_ROLE_USER,
     CHAT_ROLE_AI,
     PROGRESS_ICON_NAME,
-    PROGRESS_TOOLTIP
+    PROGRESS_TOOLTIP,
+    TOPIC_LABEL  # Label for the topic header
 )
 from database import init_db, activity_log, retrieve_relevant_terms, get_progress_summary, get_all_topics  # Added get_all_topics
 from data_loader import load_terms_from_yaml
@@ -143,8 +144,9 @@ async def main(message: cl.Message):
                 "evaluation_feedback": previous_evaluation_feedback # Pass the *previous* turn's feedback
             }
 
-            # Send the initial message WITH only the progress action
-            msg = cl.Message(content="", actions=[progress_action])
+            # Add prominent topic header to response
+            topic_header = f"**{TOPIC_LABEL}:** {selected_topic_for_turn}\n\n"
+            msg = cl.Message(content=topic_header, actions=[progress_action])
             await msg.send()
 
             async for chunk in main_chain.astream(chain_input):
