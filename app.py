@@ -1,7 +1,8 @@
 import chainlit as cl
 import os
 from dotenv import load_dotenv
-import sqlite3
+import sqlite3 # Ensure sqlite3 is imported
+import os # Ensure os is imported
 import datetime
 import yaml
 import numpy as np
@@ -31,12 +32,13 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # Create domain_embeddings table
+    # Create domain_embeddings table - Verify this part
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS domain_embeddings (
         term_id INTEGER PRIMARY KEY AUTOINCREMENT,
         term TEXT NOT NULL UNIQUE,
         definition TEXT NOT NULL,
+        topic TEXT NOT NULL, -- Make sure this line is present
         embedding BLOB NOT NULL
     )
     """)
@@ -57,47 +59,84 @@ def init_db():
 
 # Function to load terms and embeddings into the database
 def load_terms_from_yaml():
-    """Loads terms from the YAML file, generates embeddings, and stores them in the DB."""
+    """Loads terms and their topics from the YAML file (using existing structure),
+       generates embeddings, and stores them in the DB."""
     if not os.path.exists(TERMS_YAML_PATH):
-        print(f"Warning: Terms file not found at {TERMS_YAML_PATH}")
+        print(f"Error: Terms file not found at {TERMS_YAML_PATH}")
         return
 
     try:
         with open(TERMS_YAML_PATH, 'r', encoding='utf-8') as f:
             data = yaml.safe_load(f)
     except Exception as e:
-        print(f"Error loading or parsing YAML file {TERMS_YAML_PATH}: {e}")
+        print(f"Error loading or parsing YAML file: {e}")
         return
 
-    if 'terms' not in data or not isinstance(data['terms'], dict):
-        print(f"Warning: 'terms' key not found or not a dictionary in {TERMS_YAML_PATH}")
+    # Validate the structure
+    if not data or not isinstance(data, dict) or 'topics' not in data or 'terms' not in data:
+        print("Error: YAML file is missing 'topics' or 'terms' sections, or is not structured correctly.")
         return
+    if not isinstance(data['topics'], dict) or not isinstance(data['terms'], dict):
+         print("Error: 'topics' and 'terms' sections must be dictionaries.")
+         return
 
-    terms_to_insert = []
-    texts_to_embed = []
-    term_keys = []
+    all_terms_data = data['terms']
+    topics_data = data['topics']
 
-    for key, term_data in data['terms'].items():
-        if 'term_sv' in term_data and 'definition_sv' in term_data:
-            term_keys.append(key)
-            # Embed the Swedish definition
-            texts_to_embed.append(term_data['definition_sv'])
-            terms_to_insert.append((
-                key, # Using the key from YAML as the 'term' column
-                term_data['term_sv'],
-                term_data['definition_sv']
-            ))
-        else:
-            print(f"Warning: Skipping term '{key}' due to missing 'term_sv' or 'definition_sv'.")
+    terms_to_insert = [] # List to hold dicts: {'term_key': key, 'term_sv': sv, 'def_sv': def, 'topic': topic_key}
+    texts_to_embed = [] # List to hold strings for embedding: "term_sv: def_sv"
+    processed_term_keys = set() # Keep track of term keys for which embeddings are generated
+
+    # Iterate through topics to link terms to topics
+    for topic_key, topic_info in topics_data.items():
+        if not isinstance(topic_info, dict) or 'terms' not in topic_info or not isinstance(topic_info['terms'], list):
+            print(f"Warning: Skipping topic '{topic_key}' due to missing or invalid 'terms' list.")
+            continue
+
+        for term_key in topic_info['terms']:
+            if term_key not in all_terms_data:
+                print(f"Warning: Term key '{term_key}' listed under topic '{topic_key}' not found in the main 'terms' section. Skipping.")
+                continue
+
+            term_details = all_terms_data[term_key]
+            if not isinstance(term_details, dict) or 'term_sv' not in term_details or 'definition_sv' not in term_details:
+                print(f"Warning: Skipping term key '{term_key}' due to missing 'term_sv' or 'definition_sv'.")
+                continue
+
+            term_sv = term_details['term_sv']
+            definition_sv = term_details['definition_sv']
+
+            # Prepare data for insertion (associating this term instance with this topic)
+            # Note: The DB schema currently enforces UNIQUE(term). If a term_sv needs to exist
+            # under multiple topics in the DB, the schema needs changing (e.g., remove UNIQUE,
+            # or use a separate mapping table). For now, we insert the term with the *first*
+            # topic encountered and generate embedding only once per term_key.
+            term_info_for_insert = {
+                'term_key': term_key, # Store the key for reference
+                'term_sv': term_sv,
+                'def_sv': definition_sv,
+                'topic': topic_key # Use the topic key from the topics section
+            }
+            terms_to_insert.append(term_info_for_insert)
+
+            # Generate embedding only once per unique term key
+            if term_key not in processed_term_keys:
+                text_for_embedding = f"{term_sv}: {definition_sv}"
+                texts_to_embed.append(text_for_embedding)
+                processed_term_keys.add(term_key)
+                # Store the index mapping for later retrieval
+                term_info_for_insert['embedding_index'] = len(texts_to_embed) - 1
+
 
     if not texts_to_embed:
-        print("No valid terms found to embed and load.")
+        print("No terms found to process and embed in the YAML file.")
         return
 
-    print(f"Generating embeddings for {len(texts_to_embed)} terms...")
+    print(f"Generating embeddings for {len(texts_to_embed)} unique terms...")
     try:
         embeddings = embedding_model.embed_documents(texts_to_embed)
-        print("Embeddings generated.")
+        # Convert embeddings to bytes for SQLite storage
+        embedding_blobs = [np.array(emb, dtype=np.float32).tobytes() for emb in embeddings]
     except Exception as e:
         print(f"Error generating embeddings: {e}")
         return
@@ -107,31 +146,59 @@ def load_terms_from_yaml():
 
     inserted_count = 0
     skipped_count = 0
-    for i, term_tuple in enumerate(terms_to_insert):
-        term_key, term_sv, definition_sv = term_tuple
-        embedding_vector = embeddings[i]
-        # Convert numpy array/list of floats to bytes for BLOB storage
-        # Ensure the dtype matches the dimension and type used for storage
-        embedding_blob = np.array(embedding_vector, dtype=np.float32).tobytes() # Added dtype=np.float32
+    # Create a map from term_key to its embedding blob
+    term_key_to_embedding = {}
+    temp_processed_keys = set() # Need this again for mapping
+    embedding_idx_counter = 0
+    for term_info in terms_to_insert:
+        if 'embedding_index' in term_info and term_info['term_key'] not in temp_processed_keys:
+             term_key_to_embedding[term_info['term_key']] = embedding_blobs[embedding_idx_counter]
+             temp_processed_keys.add(term_info['term_key'])
+             embedding_idx_counter += 1
 
-        try:
-            # Use INSERT OR IGNORE to avoid errors if the term already exists (based on UNIQUE constraint)
-            cursor.execute("""
-            INSERT OR IGNORE INTO domain_embeddings (term, definition, embedding)
-            VALUES (?, ?, ?)
-            """, (term_sv, definition_sv, embedding_blob))
-            if cursor.rowcount > 0:
+
+    # Insert terms, linking the correct embedding blob
+    inserted_term_sv = set() # Track inserted term_sv values due to UNIQUE constraint
+    for term_info in terms_to_insert:
+        term_key = term_info['term_key']
+        term_sv = term_info['term_sv']
+        definition_sv = term_info['def_sv']
+        topic = term_info['topic']
+        embedding_blob = term_key_to_embedding.get(term_key) # Get the pre-generated blob
+
+        if not embedding_blob:
+             print(f"Error: Could not find embedding for term key '{term_key}'. Skipping insertion.")
+             skipped_count += 1
+             continue
+
+        # Only insert if the term_sv hasn't been inserted yet (due to UNIQUE constraint)
+        if term_sv not in inserted_term_sv:
+            try:
+                cursor.execute("""
+                    INSERT INTO domain_embeddings (term, definition, topic, embedding)
+                    VALUES (?, ?, ?, ?)
+                """, (term_sv, definition_sv, topic, embedding_blob))
+                inserted_term_sv.add(term_sv) # Mark this term_sv as inserted
                 inserted_count += 1
-            else:
+            except sqlite3.IntegrityError:
+                # This specific term_sv already exists, likely inserted via a different term_key
+                # or a previous run. We respect the UNIQUE constraint.
+                print(f"Info: Term '{term_sv}' already exists in DB. Skipping duplicate insertion for topic '{topic}'.")
+                inserted_term_sv.add(term_sv) # Still mark as 'handled' for this run
                 skipped_count += 1
-        except sqlite3.Error as e:
-            print(f"Database error inserting term '{term_sv}': {e}")
-            skipped_count += 1 # Count as skipped if error occurs
+            except sqlite3.Error as e:
+                print(f"Error inserting term '{term_sv}' (key: {term_key}): {e}")
+                skipped_count += 1
+        else:
+            # This term_sv was already inserted in *this run* (likely via a different topic association)
+            # We skip inserting it again.
+            # print(f"Info: Term '{term_sv}' already inserted in this run. Skipping duplicate insertion for topic '{topic}'.")
+            skipped_count += 1
+
 
     conn.commit()
     conn.close()
-    print(f"Term loading complete. Inserted: {inserted_count}, Skipped (already exist or error): {skipped_count}")
-
+    print(f"Term loading complete. Inserted: {inserted_count}, Skipped (already exist, error, or duplicate topic link): {skipped_count}")
 
 # Function to retrieve relevant terms based on message similarity
 def retrieve_relevant_terms(user_message_text: str, top_n: int = 3, similarity_threshold: float = 0.3) -> list[dict]: # Added threshold
