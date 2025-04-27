@@ -51,9 +51,11 @@ Current step to implement: #20
 18. **Update Bandit Model:** After each turn's evaluation, update the alpha/beta parameters for the used topic.
 19. ~~**Add evaluation feedback:** Whenever positive or negative feedback is delivered from the evaluation LLM, inject this into the next LLM response (e.g. Progress made in international_trade! Current progress: 3/6 (50%)). Color these lines green or red depending on success or failure.~~
 20. **Add Response Mode Control:** Implement in-chat controls via ChatSettings to adjust LLM verbosity (slider, 5 settings) and style (factual/friendly/playful slider, three settings). Expose the control in the UI. These should only affect the response, not the evaluation.
-21. **Add Explain Action:** Implement in-chat Action button (similar to Progress Report) to immediately explain concepts in the prior chat in more detail, including translating the term into the native language.
-22. **Document Application:** Write or update `README.md` with setup and usage instructions.  
-23. **(Optional) Visualize Progress:** Enhance progress UI with charts or plots (e.g., via Matplotlib/Plotly).  
+21. **Add Language Level Control** Implement an in-chat control via ChatSettings to set the complexity level of the language used in chat responses (slider, 5 settings: grade 4 level, grade 7 level, high school level, professional level, academic level). Note that this should not impact the terms discussed, just the language around it.
+22. **Add Explain Action:** Implement in-chat Action button (similar to Progress Report) to immediately explain concepts in the prior chat in more detail, including translating the term into the native language.
+23. **Keyword highlighting** Add an LLM filter to identify keywords in the response that relate to the subject matter and are important to know. Render these keywords as underlined in the UI in the final response. 
+24. **Document Application:** Write or update `README.md` with setup and usage instructions.  
+25. **(Optional) Visualize Progress:** Enhance progress UI with charts or plots (e.g., via Matplotlib/Plotly).  
 
 # USER TESTING AND HUMAN ITERATION
 

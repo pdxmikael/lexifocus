@@ -52,7 +52,7 @@ async def start_chat():
     cl.user_session.set(SESSION_KEY_CHAT_HISTORY, [])
     cl.user_session.set(SESSION_KEY_LAST_EVAL_FEEDBACK, INITIAL_EVAL_FEEDBACK)
 
-    # --- Add ChatSettings for verbosity and style --- #
+    # --- Add ChatSettings for verbosity, style, and language level --- #
     settings = cl.ChatSettings([
         Slider(
             id="verbosity_level",
@@ -69,6 +69,15 @@ async def start_chat():
             values=STYLE_OPTIONS,
             initial_index=1,  # Default to 'friendly'
             description="Choose the tone of the AI's responses."
+        ),
+        Slider(
+            id="language_level",
+            label="Language Level",
+            min=1,
+            max=5,
+            step=1,
+            initial=3,
+            description="Set the complexity of the language used in responses: 1=Grade 4, 2=Grade 7, 3=High School, 4=Professional, 5=Academic."
         )
     ])
     await settings.send()
@@ -108,6 +117,7 @@ async def main(message: cl.Message):
     debug_log(f"--- SETTINGS DICT ---\n{settings}")
     verbosity_level = settings.get("verbosity_level", DEFAULT_VERBOSITY_LEVEL)
     response_style = settings.get("response_style", STYLE_OPTIONS[1])
+    language_level = settings.get("language_level", 3)
 
     user_message_content = message.content
     print(f"\n--- Turn Start ---")
@@ -170,11 +180,12 @@ async def main(message: cl.Message):
                 "evaluation_feedback": previous_evaluation_feedback,
                 "evaluation_explanation": evaluation_explanation,
                 "verbosity_level": verbosity_level,
-                "response_style": response_style
+                "response_style": response_style,
+                "language_level": language_level
             }
             # --- Debug log the system prompt and input ---
             from chains import MAIN_PROMPT_SYSTEM
-            debug_log(f"\n--- SYSTEM PROMPT ---\n{MAIN_PROMPT_SYSTEM.format(**{k: chain_input.get(k, '') for k in ['focus_topic','verbosity_level','response_style','evaluation_feedback','evaluation_explanation','retrieved_context','chat_history']})}")
+            debug_log(f"\n--- SYSTEM PROMPT ---\n{MAIN_PROMPT_SYSTEM.format(**{k: chain_input.get(k, '') for k in ['focus_topic','verbosity_level','response_style','language_level','evaluation_feedback','evaluation_explanation','retrieved_context','chat_history']})}")
             debug_log(f"--- USER MESSAGE ---\n{user_message_content}")
 
             # Add evaluation feedback banner if available

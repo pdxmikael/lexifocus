@@ -41,10 +41,15 @@ def format_chat_history(chat_history: list) -> str:
     # Use role constants
     return "\n".join([f"{msg['role'].replace(CHAT_ROLE_USER, 'Human').replace(CHAT_ROLE_AI, 'AI').capitalize()}: {msg['content']}" for msg in chat_history])
 
+def get_language_level(x):
+    # Pass through the language_level from input, default to 3 if missing
+    return x.get('language_level', 3)
+
 main_chain = (
     RunnablePassthrough.assign(
         retrieved_context=lambda x: "\n".join([f"- {term['term']}: {term['definition']}" for term in x.get('retrieved_terms', [])]) or "N/A",
-        chat_history=lambda x: format_chat_history(x.get('chat_history', []))
+        chat_history=lambda x: format_chat_history(x.get('chat_history', [])),
+        language_level=get_language_level
     )
     | MAIN_PROMPT_TEMPLATE
     | llm # Use the main LLM instance
