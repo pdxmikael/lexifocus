@@ -1,7 +1,6 @@
 import chainlit as cl
 from chainlit.action import Action # Import Action
-
-# Import necessary functions and objects from the new modules
+from chainlit.input_widget import Slider, Select
 from config import (
     OPENAI_API_KEY,  # Check if LLM is configured
     SESSION_KEY_CHAT_HISTORY,
@@ -18,7 +17,9 @@ from config import (
     CHAT_ROLE_AI,
     PROGRESS_ICON_NAME,
     PROGRESS_TOOLTIP,
-    TOPIC_LABEL  # Label for the topic header
+    TOPIC_LABEL,  # Label for the topic header
+    DEFAULT_VERBOSITY_LEVEL,
+    STYLE_OPTIONS
 )
 from database import init_db, activity_log, retrieve_relevant_terms, get_progress_summary, get_all_topics
 from topic_selector import select_topic_thompson, update_bandit_model  # Use refactored module
@@ -46,9 +47,31 @@ progress_action = Action(
 
 @cl.on_chat_start
 async def start_chat():
-    """Initializes the chat session and adds actions."""
+    """Initializes the chat session and adds actions and chat settings."""
     cl.user_session.set(SESSION_KEY_CHAT_HISTORY, [])
     cl.user_session.set(SESSION_KEY_LAST_EVAL_FEEDBACK, INITIAL_EVAL_FEEDBACK)
+
+    # --- Add ChatSettings for verbosity and style --- #
+    settings = cl.ChatSettings([
+        Slider(
+            id="verbosity_level",
+            label="Verbosity",
+            min=1,
+            max=5,
+            step=1,
+            initial=DEFAULT_VERBOSITY_LEVEL,
+            description="How detailed should the AI's responses be? (1=concise, 5=detailed)"
+        ),
+        Select(
+            id="response_style",
+            label="Response Style",
+            values=STYLE_OPTIONS,
+            initial_index=1,  # Default to 'friendly'
+            description="Choose the tone of the AI's responses."
+        )
+    ])
+    await settings.send()
+
     # Add only the progress action to the welcome message
     await cl.Message(content=WELCOME_MESSAGE, actions=[progress_action]).send()
 
@@ -74,7 +97,9 @@ async def on_show_progress(action: Action):
     # await action.remove()
 
 @cl.on_message
-async def main(message: cl.Message):
+async def main(message: cl.Message, settings: dict = None):
+    if settings is None:
+        settings = {}
     user_message_content = message.content
     print(f"\n--- Turn Start ---")
     print(f"User message: {user_message_content}")
@@ -83,6 +108,10 @@ async def main(message: cl.Message):
     chat_history = cl.user_session.get(SESSION_KEY_CHAT_HISTORY, [])
     previous_evaluation_feedback = cl.user_session.get(SESSION_KEY_LAST_EVAL_FEEDBACK, INITIAL_EVAL_FEEDBACK)
     print(f"Previous Turn Evaluation Feedback (for current prompt): {previous_evaluation_feedback}")
+
+    # --- Get current ChatSettings from argument --- #
+    verbosity_level = settings.get("verbosity_level", DEFAULT_VERBOSITY_LEVEL)
+    response_style = settings.get("response_style", STYLE_OPTIONS[1])  # Default to 'friendly'
 
     # --- 1. Retrieve Relevant Terms --- #
     retrieved_terms = retrieve_relevant_terms(user_message_content, top_n=3, similarity_threshold=0.25)
@@ -134,7 +163,10 @@ async def main(message: cl.Message):
                 "chat_history": chat_history,
                 "focus_topic": selected_topic_for_turn,
                 "evaluation_feedback": previous_evaluation_feedback,
-                "evaluation_explanation": evaluation_explanation
+                "evaluation_explanation": evaluation_explanation,
+                # --- Pass ChatSettings to the chain --- #
+                "verbosity_level": verbosity_level,
+                "response_style": response_style
             }
 
             # Add evaluation feedback banner if available
