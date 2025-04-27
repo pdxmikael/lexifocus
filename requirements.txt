@@ -1,3 +1,7 @@
 chainlit
 langchain
 python-dotenv
+PyYAML
+langchain-huggingface
+sentence-transformers
+numpy

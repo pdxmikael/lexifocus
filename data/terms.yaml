@@ -1,0 +1,87 @@
+
+topics:
+  grundlaggande_ekonomiska_begrepp:
+    description: "Grundläggande koncept inom nationalekonomi och privatekonomi."
+    terms:
+      - bnp
+      - inflation
+      - utbud_efterfragan
+      - budget
+      - ranta
+
+  marknadsekonomi:
+    description: "Hur marknader fungerar, prissättning och konkurrens."
+    terms:
+      - utbud_efterfragan
+      - monopol
+      - oligopol
+      - priselasticitet
+      - marknadsjamvikt
+
+  internationell_handel:
+    description: "Handel mellan länder, valutor och handelshinder."
+    terms:
+      - export
+      - import
+      - valutakurs
+      - tull
+      - frihandel
+
+terms:
+  bnp:
+    term_sv: "Bruttonationalprodukt (BNP)"
+    definition_sv: "Värdet av alla varor och tjänster som produceras i ett land under ett år."
+    definition_en: "The total value of all goods and services produced within a country in a year."
+  inflation:
+    term_sv: "Inflation"
+    definition_sv: "En generell och ihållande ökning av prisnivån i samhället, vilket minskar pengarnas köpkraft."
+    definition_en: "A general and sustained increase in the price level in society, reducing the purchasing power of money."
+  utbud_efterfragan:
+    term_sv: "Utbud och Efterfrågan"
+    definition_sv: "Principen om hur priset på en vara eller tjänst bestäms av mängden som finns tillgänglig (utbud) och hur mycket konsumenterna vill köpa (efterfrågan)."
+    definition_en: "The principle of how the price of a good or service is determined by the quantity available (supply) and how much consumers want to buy (demand)."
+  budget:
+    term_sv: "Budget"
+    definition_sv: "En plan för inkomster och utgifter under en viss tidsperiod, används av både privatpersoner, företag och offentlig sektor."
+    definition_en: "A plan for income and expenses over a specific period, used by individuals, companies, and the public sector."
+  ranta:
+    term_sv: "Ränta"
+    definition_sv: "Kostnaden för att låna pengar, eller avkastningen på att spara pengar."
+    definition_en: "The cost of borrowing money, or the return on saving money."
+  monopol:
+    term_sv: "Monopol"
+    definition_sv: "En marknadssituation där det endast finns en säljare av en viss vara eller tjänst."
+    definition_en: "A market situation where there is only one seller of a particular good or service."
+  oligopol:
+    term_sv: "Oligopol"
+    definition_sv: "En marknadssituation där ett fåtal stora företag dominerar marknaden."
+    definition_en: "A market situation where a few large companies dominate the market."
+  priselasticitet:
+    term_sv: "Priselasticitet"
+    definition_sv: "Ett mått på hur känslig efterfrågan på en vara är för prisförändringar."
+    definition_en: "A measure of how sensitive the demand for a good is to price changes."
+  marknadsjamvikt:
+    term_sv: "Marknadsjämvikt"
+    definition_sv: "Det pris och den kvantitet där utbudet av en vara är lika stort som efterfrågan."
+    definition_en: "The price and quantity at which the supply of a good equals the demand."
+  export:
+    term_sv: "Export"
+    definition_sv: "Försäljning av varor och tjänster till andra länder."
+    definition_en: "Selling goods and services to other countries."
+  import:
+    term_sv: "Import"
+    definition_sv: "Inköp av varor och tjänster från andra länder."
+    definition_en: "Purchasing goods and services from other countries."
+  valutakurs:
+    term_sv: "Valutakurs"
+    definition_sv: "Priset på ett lands valuta uttryckt i ett annat lands valuta."
+    definition_en: "The price of one country's currency expressed in another country's currency."
+  tull:
+    term_sv: "Tull"
+    definition_sv: "En skatt som läggs på importerade varor."
+    definition_en: "A tax imposed on imported goods."
+  frihandel:
+    term_sv: "Frihandel"
+    definition_sv: "Internationell handel utan handelshinder som tullar och kvoter."
+    definition_en: "International trade without trade barriers such as tariffs and quotas."
+
