@@ -137,3 +137,49 @@ def retrieve_relevant_terms(user_message_text: str, top_n: int = 3, similarity_t
     except Exception as e:
         print(f"Error during term retrieval: {e}")
         return []
+
+def get_progress_summary() -> dict[str, dict]:
+    """Calculates the progress (success rate) for each topic in the activity log."""
+    summary = {}
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        # Get total counts and success counts per topic
+        cursor.execute("""
+            SELECT
+                topic,
+                COUNT(*) as total_attempts,
+                SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successful_attempts
+            FROM activity_log
+            GROUP BY topic
+        """)
+        rows = cursor.fetchall()
+
+        for row in rows:
+            topic, total_attempts, successful_attempts = row
+            # Ensure successful_attempts is not None (happens if no successes)
+            successful_attempts = successful_attempts or 0
+            if total_attempts > 0:
+                success_rate = (successful_attempts / total_attempts) * 100
+            else:
+                success_rate = 0
+
+            summary[topic] = {
+                "total_attempts": total_attempts,
+                "successful_attempts": successful_attempts,
+                "success_rate": round(success_rate, 1) # Round to one decimal place
+            }
+
+    except sqlite3.Error as e:
+        print(f"Database error fetching progress summary: {e}")
+        return {} # Return empty dict on error
+    except Exception as e:
+        print(f"Error fetching progress summary: {e}")
+        return {}
+    finally:
+        if conn:
+            conn.close()
+
+    return summary
