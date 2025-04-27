@@ -4,4 +4,8 @@ python-dotenv
 PyYAML
 langchain-huggingface
 sentence-transformers
+scikit-learn
 numpy
+langchain-openai # Needed for evaluation LLM
+opentelemetry-proto==1.31.1 # Specific version required by dependencies
+protobuf # Let pip manage this based on other dependencies

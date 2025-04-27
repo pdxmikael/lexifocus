@@ -29,18 +29,18 @@ The application is developed on VSCode on Windows within a virtual Python enviro
 
 # DEVELOPMENT PLAN
 
-Current step to implement: #6
+Current step to implement: #9
 
 1.  ~~**Set up Project Structure:** Create the basic project structure for a LangChain/Chainlit application, including `app.py` (or similar main file), configuration files, and directories for data and database.~~
 2.  ~~**Implement Basic Chainlit App:** In `app.py`, set up a minimal Chainlit application with basic chat functionality using LangChain.~~
 3.  ~~**Initialize Database:** Add code to initialize the SQLite database (`lexifocus.db`) and create necessary tables (`domain_embeddings`, `activity_log`) when the application starts.~~
 4.  ~~**Compile Terms:** Create a CSV or YAML file (`terms.yaml` or `terms.csv`) containing 50-100 Swedish economics term definitions.~~
 5.  ~~**Embed and Load Terms:** Implement logic (e.g., in a setup function or on startup) to read the term definitions, generate embeddings using a suitable model (e.g., from LangChain Embeddings), and store both the terms and their embeddings in the `domain_embeddings` table.~~
-6.  **Implement Retrieval:** In the main chat logic, before calling the LLM, add code to query the SQLite database for the top 3 most relevant term definitions based on the current chat history/context, using vector similarity search on the embeddings. Integrate these retrieved terms into the context provided to the LLM *to facilitate contextual term introduction and support evaluation*.
-7.  **Define Logging Function:** Create a helper function `activity_log(topic, success)` that takes a topic name and a boolean success indicator, and inserts a corresponding record into the `activity_log` table in SQLite.
-8.  **Evaluate Turn Success:** After receiving the user's message and before generating the main response, make a separate call to the configured LLM. This call should analyze the user's last message in the context of the `selected_topic_for_turn`. The LLM's task is to determine if the user demonstrated **progress (success)**, **setback (failure)**, or **no significant change** regarding the topic.
+6.  ~~**Implement Retrieval:** In the main chat logic, before calling the LLM, add code to query the SQLite database for the top 3 most relevant term definitions based on the current chat history/context, using vector similarity search on the embeddings. Integrate these retrieved terms into the context provided to the LLM *to facilitate contextual term introduction and support evaluation*.~~
+7.  ~~**Define Logging Function:** Create a helper function `activity_log(topic, success)` that takes a topic name and a boolean success indicator, and inserts a corresponding record into the `activity_log` table in SQLite.~~
+8.  ~~**Evaluate Turn Success:** After receiving the user's message and before generating the main response, make a separate call to the configured LLM. This call should analyze the user's last message in the context of the `selected_topic_for_turn`. The LLM's task is to determine if the user demonstrated **progress (success)**, **setback (failure)**, or **no significant change** regarding the topic.~~
 9.  **Log Outcome:** Call the `activity_log` function with the determined topic and the success/failure outcome from the previous step. Incorporate brief feedback based on this evaluation into the system prompt or context for the *next* main chat turn.
-10. **Create Progress View:** Add functionality within the Chainlit UI (e.g., a button or command like `/progress`) to display user progress.
+10. **Create Progress View:** Add a button within the Chainlit UI to display user progress.
 11. **Implement Progress Logic:** Code the logic behind the progress view to query the `activity_log` table, calculate progress metrics (like percentage accuracy per topic), and display this data in the Chainlit interface.
 12. **(Optional) Visualize Progress:** Enhance the progress view using Chainlit's visualization elements or by integrating a library like Matplotlib/Plotly if needed.
 13. **Implement Adaptive Topic Selection (Initial):** Before the LLM call, add logic to query the progress data (via the `activity_log` table) and select the next topic. Start with a simple strategy: prioritize topics with mastery below 80%. If all topics are above 80%, use a round-robin approach. Store the selected topic (e.g., in user session state).

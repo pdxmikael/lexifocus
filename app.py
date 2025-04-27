@@ -7,6 +7,10 @@ import yaml
 import numpy as np
 from langchain_huggingface import HuggingFaceEmbeddings
 from sklearn.metrics.pairwise import cosine_similarity
+from langchain.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from langchain_openai import ChatOpenAI # Re-added
 
 # Load environment variables (optional, but good practice)
 load_dotenv()
@@ -203,9 +207,105 @@ def retrieve_relevant_terms(user_message_text: str, top_n: int = 3, similarity_t
         return []
 
 
+# Function to log user activity/progress (Added)
+def activity_log(topic: str, success: bool):
+    """Logs a user interaction outcome to the activity_log table."""
+    conn = None # Initialize conn to None
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        timestamp = datetime.datetime.now().isoformat()
+        # Convert boolean success to integer (1 for True, 0 for False) for SQLite
+        success_int = 1 if success else 0
+
+        cursor.execute("""
+        INSERT INTO activity_log (timestamp, topic, success)
+        VALUES (?, ?, ?)
+        """, (timestamp, topic, success_int))
+
+        conn.commit()
+        print(f"Activity logged: Topic='{topic}', Success={success}") # Optional: confirmation log
+
+    except sqlite3.Error as e:
+        print(f"Database error during activity logging: {e}")
+    except Exception as e:
+        print(f"Error during activity logging: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+
+# LLM Setup for Evaluation (Reverted to OpenAI)
+# Ensure OPENAI_API_KEY is set in your .env file or environment variables
+try:
+    evaluation_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0) # Using OpenAI model
+except ImportError:
+    print("Error: langchain-openai package not found. Please install it: pip install langchain-openai")
+    evaluation_llm = None
+except Exception as e:
+    print(f"Error initializing OpenAI LLM (check API key?): {e}")
+    evaluation_llm = None
+
+# Prompt Template for Evaluation (No changes needed)
+EVALUATION_PROMPT_TEMPLATE = ChatPromptTemplate.from_messages([
+    ("system", "You are an expert language tutor evaluating a student's understanding of a specific topic based on their latest message in a conversation. The student is learning Swedish economics terms. Their native language is English."),
+    ("human", """Analyze the student's latest message regarding the topic: **{topic}**.
+
+Consider the following potentially relevant terms and definitions:
+{retrieved_context}
+
+Student's latest message:
+'{user_message}'
+
+Based *only* on this single message and the provided context, did the student demonstrate clear progress in understanding or correctly using the term(s) related to '{topic}' in Swedish?
+
+Respond with ONLY ONE of the following words:
+- 'progress': If the student showed clear understanding or correct usage related to the topic.
+- 'setback': If the student showed clear misunderstanding or incorrect usage related to the topic.
+- 'no_change': If the message was too short, irrelevant to the topic, or didn't provide enough information to judge progress or setback.""")
+])
+
+# Evaluation Chain (No changes needed, uses the updated evaluation_llm)
+evaluation_chain = (
+    RunnablePassthrough()
+    | EVALUATION_PROMPT_TEMPLATE
+    | evaluation_llm
+    | StrOutputParser()
+) if evaluation_llm else None
+
+# Function to evaluate turn success (No changes needed)
+async def evaluate_turn_success(topic: str, user_message: str, retrieved_context: str) -> str:
+    """Calls the LLM to evaluate the user's message for progress on a topic."""
+    if not evaluation_chain:
+        print("Evaluation LLM not available. Skipping evaluation.")
+        return "no_change" # Default if LLM is not configured
+
+    try:
+        input_data = {
+            "topic": topic,
+            "user_message": user_message,
+            "retrieved_context": retrieved_context if retrieved_context else "None provided."
+        }
+        # Use invoke for synchronous-style call within async function for simplicity here
+        # For heavy load, consider async invoke (ainvoke)
+        result = await evaluation_chain.ainvoke(input_data)
+        result = result.strip().lower()
+
+        # Validate result
+        if result in ["progress", "setback", "no_change"]:
+            print(f"Evaluation result for topic '{topic}': {result}")
+            return result
+        else:
+            print(f"Warning: Unexpected evaluation result: '{result}'. Defaulting to 'no_change'.")
+            return "no_change"
+
+    except Exception as e:
+        print(f"Error during LLM evaluation: {e}")
+        return "no_change" # Default on error
+
 # Initialize the database on application startup
 init_db()
-# Load terms and generate embeddings on startup (Added)
+# Load terms and generate embeddings on startup
 load_terms_from_yaml()
 
 @cl.on_chat_start
@@ -216,23 +316,51 @@ async def start_chat():
 @cl.on_message
 async def main(message: cl.Message):
     """Handles incoming user messages."""
+    user_message_content = message.content
 
-    # 1. Retrieve relevant terms (Added)
-    relevant_terms = retrieve_relevant_terms(message.content, top_n=3)
+    # --- Placeholder for Topic Selection (Step 13) ---
+    selected_topic_for_turn = "Inflation" # Using 'Inflation' as a placeholder topic
+    # --- End Placeholder ---
 
-    # 2. Format retrieved terms for display/context (Added)
-    retrieved_context = "No specific terms found relevant to your message."
+    # 1. Retrieve relevant terms
+    relevant_terms = retrieve_relevant_terms(user_message_content, top_n=3)
+    retrieved_context_str = "No specific terms found relevant to your message."
     if relevant_terms:
-        retrieved_context = "Potentially relevant terms based on your message:\n"
+        retrieved_context_str = "Potentially relevant terms based on your message:\n"
         for i, term_info in enumerate(relevant_terms):
-            retrieved_context += f"{i+1}. **{term_info['term']}**: {term_info['definition']} (Similarity: {term_info['similarity']:.2f})\n"
+            retrieved_context_str += f"{i+1}. **{term_info['term']}**: {term_info['definition']} (Similarity: {term_info['similarity']:.2f})\n"
 
-    # For now, send the retrieved context back to the user for verification
-    # In the next steps, this context will be passed to the LLM
+    # --- Debug: Show Retrieved Context ---
     await cl.Message(
-        content=f"--- Debug: Retrieved Context ---\n{retrieved_context}\n---\nOriginal message: {message.content}",
+        content=f"--- Debug: Retrieved Context ---\n{retrieved_context_str}\n---",
+        parent_id=message.id # Indent under the user message
     ).send()
+    # --- End Debug ---
+
+    # 2. Evaluate Turn Success
+    evaluation_result = await evaluate_turn_success(
+        topic=selected_topic_for_turn,
+        user_message=user_message_content,
+        retrieved_context=retrieved_context_str
+    )
+
+    # --- Debug: Show Evaluation Result ---
+    await cl.Message(
+        content=f"--- Debug: Evaluation Result for topic '{selected_topic_for_turn}' ---\n{evaluation_result}\n---",
+        parent_id=message.id # Indent under the user message
+    ).send()
+    # --- End Debug ---
+
+    # 3. Log Outcome (Added)
+    # Convert evaluation result string to boolean for logging
+    log_success = evaluation_result == "progress"
+    activity_log(topic=selected_topic_for_turn, success=log_success)
 
     # Placeholder for actual LLM call using the message and retrieved_context
     # llm_response = call_llm(message.content, retrieved_context)
     # await cl.Message(content=llm_response).send()
+
+    # Placeholder response for now
+    await cl.Message(
+        content=f"Received: '{user_message_content}'. Evaluation: {evaluation_result}. Logged: {log_success}. (LLM response not implemented yet)"
+    ).send()
