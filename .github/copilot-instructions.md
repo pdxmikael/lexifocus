@@ -29,7 +29,7 @@ The application is developed on VSCode on Windows within a virtual Python enviro
 
 # DEVELOPMENT PLAN
 
-Current step to implement: #8
+Current step to implement: #12
 
 1.  ~~**Set up Project Structure:** Create the basic project structure for a LangChain/Chainlit application, including `app.py` (or similar main file), configuration files, and directories for data and database.~~
 2.  ~~**Implement Basic Chainlit App:** In `app.py`, set up a minimal Chainlit application with basic chat functionality using LangChain.~~
@@ -38,7 +38,7 @@ Current step to implement: #8
 5.  ~~**Define Term-to-Topic Mapping:** Ensure the `terms.yaml` file defines how individual terms map to broader learning "topics" used for progress tracking and adaptive selection.~~
 6.  ~~**Embed and Load Terms:** Implement logic (e.g., in a setup function or on startup) to read the term definitions, generate embeddings using a suitable model (e.g., from LangChain Embeddings), and store both the terms and their embeddings in the `domain_embeddings` table.~~
 7.  ~~**Implement Retrieval:** In the main chat logic, before calling the LLM, add code to query the SQLite database for the top 3 most relevant term definitions based on the current chat history/context, using vector similarity search on the embeddings. Integrate these retrieved terms into the context provided to the LLM *to facilitate contextual term introduction and support evaluation*.~~
-8.  **Implement Core Conversational Chain:** Define and implement the main LangChain conversational chain. This chain will take user input, chat history, retrieved context (from Step 7), the current focus topic (from Step 16/19), and evaluation feedback (from Step 12) to generate the tutor's response.
+8.  ~~**Implement Core Conversational Chain:** Define and implement the main LangChain conversational chain. This chain will take user input, chat history, retrieved context (from Step 7), the current focus topic (from Step 16/19), and evaluation feedback (from Step 12) to generate the tutor's response.~~
 9.  ~~**Define Logging Function:** Create a helper function `activity_log(topic, success)` that takes a topic name and a boolean success indicator, and inserts a corresponding record into the `activity_log` table in SQLite.~~
 10. ~~**Evaluate Turn Success:** After receiving the user's message and before generating the main response, make a separate call to the configured LLM. This call should analyze the user's last message in the context of the `selected_topic_for_turn`. The LLM's task is to determine if the user demonstrated **progress (success)**, **setback (failure)**, or **no significant change** regarding the topic.~~
 11. ~~**Log Outcome:** Call the `activity_log` function with the determined topic and the success/failure outcome from the previous step.~~

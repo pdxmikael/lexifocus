@@ -302,50 +302,113 @@ def activity_log(topic: str, success: bool):
             conn.close()
 
 
-# LLM Setup for Evaluation (Reverted to OpenAI)
-# Ensure OPENAI_API_KEY is set in your .env file or environment variables
+# LLM Setup (Using the same one for evaluation and main chat for now)
+llm = None
 try:
-    evaluation_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0) # Using OpenAI model
+    # Check if the API key is available
+    if os.getenv("OPENAI_API_KEY"):
+        llm = ChatOpenAI(
+            model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o-mini"), # Use model from env or default
+            temperature=0.7 # Adjust temperature for conversational creativity
+        )
+        print(f"Using OpenAI model: {llm.model_name}")
+    else:
+        print("Warning: OPENAI_API_KEY not found. LLM features will be disabled.")
 except ImportError:
-    print("Error: langchain-openai package not found. Please install it: pip install langchain-openai")
-    evaluation_llm = None
+    print("Warning: langchain_openai not installed. LLM features will be disabled.")
+    print("Install with: pip install langchain_openai")
 except Exception as e:
-    print(f"Error initializing OpenAI LLM (check API key?): {e}")
-    evaluation_llm = None
+    print(f"Error initializing OpenAI LLM: {e}")
 
-# Prompt Template for Evaluation (No changes needed)
+# Rename evaluation_llm to llm for clarity if using the same instance
+evaluation_llm = llm # Keep evaluation_llm variable if needed elsewhere, pointing to the same object
+
+# --- Evaluation Chain Setup ---
+
 EVALUATION_PROMPT_TEMPLATE = ChatPromptTemplate.from_messages([
-    ("system", "You are an expert language tutor evaluating a student's understanding of a specific topic based on their latest message in a conversation. The student is learning Swedish economics terms. Their native language is English."),
-    ("human", """Analyze the student's latest message regarding the topic: **{topic}**.
+    ("system", """You are an evaluator assessing a student's understanding of a specific Swedish economics topic based on their latest message in a conversation.
+The student is learning Swedish economics terms.
+The current focus topic is: **'{topic}'**.
 
-Consider the following potentially relevant terms and definitions:
+Analyze the student's message below in the context of the conversation and the provided relevant terms/definitions.
+Determine if the student's message demonstrates **progress**, **setback**, or **no_change** in understanding or correctly using terms related to the focus topic.
+
+- **progress:** The student correctly uses a relevant term, asks a relevant question showing understanding, or discusses the topic accurately in Swedish.
+- **setback:** The student misuses a term, shows a clear misunderstanding of the topic, or struggles significantly despite context.
+- **no_change:** The message is unrelated, too simple to judge, or shows neither clear progress nor setback (e.g., simple greetings, off-topic remarks).
+
+Retrieved Swedish Terms/Definitions for Context (if any):
 {retrieved_context}
 
-Student's latest message:
-'{user_message}'
+Student's Message:
+{user_message}
 
-Based *only* on this single message and the provided context, did the student demonstrate clear progress in understanding or correctly using the term(s) related to '{topic}' in Swedish?
-
-Respond with ONLY ONE of the following words:
-- 'progress': If the student showed clear understanding or correct usage related to the topic.
-- 'setback': If the student showed clear misunderstanding or incorrect usage related to the topic.
-- 'no_change': If the message was too short, irrelevant to the topic, or didn't provide enough information to judge progress or setback.""")
+Respond ONLY with "progress", "setback", or "no_change".
+"""),
 ])
 
-# Evaluation Chain (No changes needed, uses the updated evaluation_llm)
 evaluation_chain = (
-    RunnablePassthrough()
-    | EVALUATION_PROMPT_TEMPLATE
-    | evaluation_llm
+    EVALUATION_PROMPT_TEMPLATE
+    | evaluation_llm # Use the dedicated evaluation LLM instance
     | StrOutputParser()
-) if evaluation_llm else None
+) if evaluation_llm else None # Only define if LLM is available
 
-# Function to evaluate turn success (No changes needed)
+
+# --- Main Conversational Chain Setup ---
+
+MAIN_PROMPT_TEMPLATE = ChatPromptTemplate.from_messages([
+    ("system", """You are LexiFocus, an expert and friendly language tutor specializing in Swedish economics terms for an English-speaking student.
+Your goal is to help the student learn and practice these terms through natural conversation.
+
+Instructions:
+- Engage the student in a conversation related to economics or finance.
+- **Focus Topic:** Try to steer the conversation towards the current focus topic: **'{focus_topic}'**. (If no topic is provided, choose a general economics theme).
+- **Use Swedish Primarily:** Conduct most of the conversation in Swedish.
+- **Introduce Terms Contextually:** Use the retrieved Swedish terms and definitions below naturally in your Swedish responses when relevant to the conversation. Don't just list them.
+- **Switch to English for Clarity:** Explain complex concepts, provide corrections, or clarify nuances of Swedish terms in English when necessary for understanding. Switch back to Swedish afterward.
+- **Be Encouraging:** Maintain a positive and supportive tone.
+- **Ask Follow-up Questions:** Encourage the student to respond and use the vocabulary.
+- **Consider Past Performance:** (Note: The student's previous turn was evaluated as: '{evaluation_feedback}'. Use this subtly, e.g., if 'setback', maybe simplify slightly or offer more support; if 'progress', acknowledge it implicitly or introduce a related term).
+
+Retrieved Swedish Terms/Definitions (Context):
+{retrieved_context}
+
+Chat History:
+{chat_history}
+"""),
+    ("human", "{user_message}")
+])
+
+# Main Conversational Chain
+# This chain will combine context, history, and user message to generate a response
+# Note: 'focus_topic' and 'evaluation_feedback' are placeholders for now
+#       'chat_history' will be manually formatted and passed in on_message
+
+def format_chat_history(chat_history: list) -> str:
+    """Formats chat history messages into a string for the prompt."""
+    if not chat_history:
+        return "No history yet."
+    # Format: "Human: message\nAI: message\n..."
+    return "\n".join([f"{msg['role'].capitalize()}: {msg['content']}" for msg in chat_history])
+
+main_chain = (
+    RunnablePassthrough.assign(
+        # Format retrieved context for the prompt
+        retrieved_context=lambda x: "\n".join([f"- {term['term']}: {term['definition']}" for term in x.get('retrieved_terms', [])]) or "N/A",
+        # Format chat history
+        chat_history=lambda x: format_chat_history(x.get('chat_history', []))
+    )
+    | MAIN_PROMPT_TEMPLATE
+    | llm
+    | StrOutputParser()
+) if llm else None # Only define chain if LLM is available
+
+# Function to evaluate turn success (Uses evaluation_chain now)
 async def evaluate_turn_success(topic: str, user_message: str, retrieved_context: str) -> str:
     """Calls the LLM to evaluate the user's message for progress on a topic."""
-    if not evaluation_chain:
-        print("Evaluation LLM not available. Skipping evaluation.")
-        return "no_change" # Default if LLM is not configured
+    if not evaluation_chain: # Check if the chain is defined
+        print("Evaluation chain not available. Skipping evaluation.")
+        return "no_change" # Default if LLM/chain is not configured
 
     try:
         input_data = {
@@ -355,12 +418,12 @@ async def evaluate_turn_success(topic: str, user_message: str, retrieved_context
         }
         # Use invoke for synchronous-style call within async function for simplicity here
         # For heavy load, consider async invoke (ainvoke)
-        result = await evaluation_chain.ainvoke(input_data)
+        result = await evaluation_chain.ainvoke(input_data) # Use the defined evaluation_chain
         result = result.strip().lower()
 
         # Validate result
         if result in ["progress", "setback", "no_change"]:
-            print(f"Evaluation result for topic '{topic}': {result}")
+            # print(f"Evaluation result for topic '{topic}': {result}") # Already printed in main loop
             return result
         else:
             print(f"Warning: Unexpected evaluation result: '{result}'. Defaulting to 'no_change'.")
@@ -382,52 +445,82 @@ async def start_chat():
 
 @cl.on_message
 async def main(message: cl.Message):
-    """Handles incoming user messages."""
     user_message_content = message.content
+    print(f"\n--- Turn Start ---")
+    print(f"User message: {user_message_content}")
 
-    # --- Placeholder for Topic Selection (Step 13) ---
-    selected_topic_for_turn = "Inflation" # Using 'Inflation' as a placeholder topic
-    # --- End Placeholder ---
+    # --- Get Chat History ---
+    # Chainlit stores history in the user session
+    chat_history = cl.user_session.get("chat_history", [])
 
-    # 1. Retrieve relevant terms
-    relevant_terms = retrieve_relevant_terms(user_message_content, top_n=3)
-    retrieved_context_str = "No specific terms found relevant to your message."
-    if relevant_terms:
-        retrieved_context_str = "Potentially relevant terms based on your message:\n"
-        for i, term_info in enumerate(relevant_terms):
-            retrieved_context_str += f"{i+1}. **{term_info['term']}**: {term_info['definition']} (Similarity: {term_info['similarity']:.2f})\n"
+    # --- 1. Retrieve Relevant Terms ---
+    retrieved_terms = retrieve_relevant_terms(user_message_content, top_n=3, similarity_threshold=0.25) # Adjusted threshold slightly
+    retrieved_context_str = "\n".join([f"- {t['term']} ({t['topic']}): {t['definition']} (Similarity: {t['similarity']:.2f})" for t in retrieved_terms]) if retrieved_terms else "No relevant terms found."
+    print(f"Retrieved Context:\n{retrieved_context_str}")
 
-    # --- Debug: Show Retrieved Context ---
-    await cl.Message(
-        content=f"--- Debug: Retrieved Context ---\n{retrieved_context_str}\n---",
-        parent_id=message.id # Indent under the user message
-    ).send()
-    # --- End Debug ---
+    # --- TODO: Step 16/19 - Select Topic ---
+    # For now, use a placeholder or the topic from the most relevant retrieved term
+    selected_topic_for_turn = retrieved_terms[0]['topic'] if retrieved_terms else "Okänt Ämne" # Placeholder topic selection
+    print(f"Selected Topic (Placeholder): {selected_topic_for_turn}")
 
-    # 2. Evaluate Turn Success
-    evaluation_result = await evaluate_turn_success(
-        topic=selected_topic_for_turn,
-        user_message=user_message_content,
-        retrieved_context=retrieved_context_str
-    )
+    # --- 2. Evaluate Turn Success ---
+    evaluation_result = "evaluation_disabled" # Default if LLM is off
+    if evaluation_llm: # Check if evaluation LLM is available
+        evaluation_result = await evaluate_turn_success(
+            topic=selected_topic_for_turn,
+            user_message=user_message_content,
+            retrieved_context=retrieved_context_str # Pass the formatted string
+        )
+    print(f"Evaluation Result: {evaluation_result}")
 
-    # --- Debug: Show Evaluation Result ---
-    await cl.Message(
-        content=f"--- Debug: Evaluation Result for topic '{selected_topic_for_turn}' ---\n{evaluation_result}\n---",
-        parent_id=message.id # Indent under the user message
-    ).send()
-    # --- End Debug ---
-
-    # 3. Log Outcome (Added)
-    # Convert evaluation result string to boolean for logging
+    # --- 3. Log Outcome ---
     log_success = evaluation_result == "progress"
     activity_log(topic=selected_topic_for_turn, success=log_success)
+    print(f"Activity Logged: Topic='{selected_topic_for_turn}', Success={log_success}")
 
-    # Placeholder for actual LLM call using the message and retrieved_context
-    # llm_response = call_llm(message.content, retrieved_context)
-    # await cl.Message(content=llm_response).send()
+    # --- TODO: Step 12 - Incorporate Evaluation Feedback ---
+    # Placeholder for feedback based on evaluation_result
+    evaluation_feedback_for_prompt = evaluation_result # Simple pass-through for now
+    print(f"Evaluation Feedback (for next prompt): {evaluation_feedback_for_prompt}")
 
-    # Placeholder response for now
-    await cl.Message(
-        content=f"Received: '{user_message_content}'. Evaluation: {evaluation_result}. Logged: {log_success}. (LLM response not implemented yet)"
-    ).send()
+
+    # --- 4. Generate Main Response using the Chain ---
+    final_response = "Sorry, the main chat functionality is currently disabled as the LLM is not configured." # Default response
+    if main_chain: # Check if main chain is available
+        try:
+            print("Invoking main conversational chain...")
+            # Prepare inputs for the main chain
+            chain_input = {
+                "user_message": user_message_content,
+                "retrieved_terms": retrieved_terms, # Pass the list of dicts
+                "chat_history": chat_history, # Pass history from session
+                "focus_topic": selected_topic_for_turn, # Pass selected topic
+                "evaluation_feedback": evaluation_feedback_for_prompt # Pass feedback
+            }
+
+            # Stream the response
+            msg = cl.Message(content="")
+            await msg.send()
+
+            async for chunk in main_chain.astream(chain_input):
+                await msg.stream_token(chunk)
+
+            final_response = msg.content # Store final response for history
+            await msg.update() # Final update for the streamed message
+
+        except Exception as e:
+            print(f"Error invoking main chain: {e}")
+            final_response = "An error occurred while generating the response."
+            await cl.Message(content=final_response).send()
+    else:
+        # Send the default message if LLM/chain is disabled
+        await cl.Message(content=final_response).send()
+
+    # --- Update Chat History ---
+    # Append user message and AI response to history stored in session
+    chat_history.append({"role": "human", "content": user_message_content})
+    chat_history.append({"role": "ai", "content": final_response})
+    cl.user_session.set("chat_history", chat_history)
+
+    print(f"AI Response: {final_response}")
+    print(f"--- Turn End ---")
