@@ -24,7 +24,7 @@ from database import init_db, activity_log, retrieve_relevant_terms, get_progres
 from topic_selector import select_topic_thompson, update_bandit_model  # Use refactored module
 from data_loader import load_terms_from_yaml
 from models import llm, evaluation_llm # Import LLM instances
-from chains import main_chain, evaluate_turn_success, explain_evaluation # Import chains and evaluation functions (including explanation)
+from chains import main_chain, evaluate_and_explain  # Combined evaluation + explanation helper
 
 # --- Application Setup --- #
 
@@ -97,15 +97,18 @@ async def main(message: cl.Message):
     cl.user_session.set(SESSION_KEY_CURRENT_TOPIC, selected_topic_for_turn)
     print(f"Selected Topic (Thompson Sampling): {selected_topic_for_turn}")
 
-    # --- 2. Evaluate Current Turn Success --- #
-    current_evaluation_result = DEFAULT_EVALUATION_RESULT
-    if evaluation_llm: # Check if the evaluation LLM instance exists
-        current_evaluation_result = await evaluate_turn_success(
+    # --- 2. Evaluate Current Turn Success & Explanation --- #
+    evaluation = {"result": DEFAULT_EVALUATION_RESULT, "explanation": ""}
+    if evaluation_llm:
+        evaluation = await evaluate_and_explain(
             topic=selected_topic_for_turn,
             user_message=user_message_content,
             retrieved_context=retrieved_context_str
         )
+    current_evaluation_result = evaluation.get("result", DEFAULT_EVALUATION_RESULT)
+    evaluation_explanation = evaluation.get("explanation", "")
     print(f"Current Turn Evaluation Result: {current_evaluation_result}")
+    print(f"Evaluation Explanation: {evaluation_explanation}")
 
     # --- 3. Log Outcome --- #
     log_success = current_evaluation_result == "progress"
@@ -116,15 +119,6 @@ async def main(message: cl.Message):
 
     # --- Store Current Evaluation for *Next* Turn --- #
     cl.user_session.set(SESSION_KEY_LAST_EVAL_FEEDBACK, current_evaluation_result)
-    # --- 5. Generate Evaluation Explanation ---
-    evaluation_explanation = ""
-    if evaluation_llm:
-        evaluation_explanation = await explain_evaluation(
-            topic=selected_topic_for_turn,
-            user_message=user_message_content,
-            retrieved_context=retrieved_context_str
-        )
-    print(f"Evaluation Explanation: {evaluation_explanation}")
 
     # --- 4. Generate Main Response using the Chain --- #
     final_response = LLM_DISABLED_MESSAGE

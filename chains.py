@@ -11,6 +11,7 @@ from config import (
     CHAT_ROLE_AI,
     EVALUATION_EXPLANATION_SYSTEM
 )
+import json  # For parsing combined evaluation output
 
 # --- Evaluation Chain Setup --- #
 
@@ -107,3 +108,49 @@ async def explain_evaluation(topic: str, user_message: str, retrieved_context: s
     except Exception as e:
         print(f"Error during evaluation explanation: {e}")
         return ""
+
+# --- Combined Evaluation & Explanation Chain Setup --- #
+from config import EVALUATION_AND_EXPLANATION_SYSTEM
+from langchain.prompts import ChatPromptTemplate as _ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser as _StrOutputParser
+
+EVALUATION_AND_EXPLANATION_PROMPT_TEMPLATE = _ChatPromptTemplate.from_messages([
+    ("system", EVALUATION_AND_EXPLANATION_SYSTEM),
+])
+evaluation_and_explanation_chain = (
+    EVALUATION_AND_EXPLANATION_PROMPT_TEMPLATE
+    | evaluation_llm
+    | _StrOutputParser()
+) if evaluation_llm else None
+
+# In-memory cache for combined evaluation and explanation
+_eval_and_explain_cache: dict[tuple[str, str, str], dict] = {}
+
+async def evaluate_and_explain(topic: str, user_message: str, retrieved_context: str) -> dict:
+    """Performs a single LLM call to get both classification and explanation as JSON."""
+    # Check cache first
+    cache_key = (topic, user_message, retrieved_context)
+    if cache_key in _eval_and_explain_cache:
+        return _eval_and_explain_cache[cache_key]
+    if not evaluation_and_explanation_chain:
+        return {"result": "no_change", "explanation": ""}
+    input_data = {
+        "topic": topic,
+        "user_message": user_message,
+        "retrieved_context": retrieved_context if retrieved_context else "None provided."
+    }
+    try:
+        response = await evaluation_and_explanation_chain.ainvoke(input_data)
+        parsed = json.loads(response)
+        # Ensure keys exist
+        result = parsed.get("result", "no_change").strip().lower()
+        explanation = parsed.get("explanation", "").strip()
+        if result not in ["progress", "setback", "no_change"]:
+            result = "no_change"
+        result_dict = {"result": result, "explanation": explanation}
+        # Cache and return
+        _eval_and_explain_cache[cache_key] = result_dict
+        return result_dict
+    except Exception as e:
+        print(f"Error in evaluate_and_explain: {e}")
+        return {"result": "no_change", "explanation": ""}

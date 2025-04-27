@@ -71,6 +71,9 @@ Respond ONLY with "progress", "setback", or "no_change".
 # Explanation Prompt (System Message)
 EVALUATION_EXPLANATION_SYSTEM = EVALUATION_PROMPT_SYSTEM + "\n\nPlease provide a 2-3 sentence explanation for why you chose this classification."  
 
+# Combined Evaluation & Explanation Prompt (System Message)
+EVALUATION_AND_EXPLANATION_SYSTEM = EVALUATION_PROMPT_SYSTEM + "\n\nProvide your response as a JSON object with two fields:\n- result: one of \"progress\", \"setback\", or \"no_change\"\n- explanation: a 2-3 sentence rationale for your classification\nReturn only the JSON object."
+
 # Main Conversation Prompt (System Message)
 MAIN_PROMPT_SYSTEM = """You are LexiFocus, an expert and friendly language tutor specializing in Swedish economics terms for an English-speaking student.
  Your goal is to help the student learn and practice these terms through natural conversation.
