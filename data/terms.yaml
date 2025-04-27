@@ -1,4 +1,3 @@
-
 topics:
   grundlaggande_ekonomiska_begrepp:
     description: "Grundläggande koncept inom nationalekonomi och privatekonomi."
@@ -27,61 +26,379 @@ topics:
       - tull
       - frihandel
 
+  offentlig_sektor:
+    description: "Skatter, offentliga utgifter och statens ekonomi."
+    terms:
+      - skatter
+      - offentlig_upphandling
+      - regeringens_budget
+      - offentliga_tjanster
+      - statsskuld
+
+  finans_och_penningpolitik:
+    description: "Hur centralbanker och regeringar styr räntor, penningmängd och budget."
+    terms:
+      - expansiv_penningpolitik
+      - stram_penningpolitik
+      - riksbankens_styrranta
+      - finanspolitik
+      - penningmangd
+
+  arbetsmarknadsekonomi:
+    description: "Arbetslöshet, sysselsättning och regler på arbetsmarknaden."
+    terms:
+      - arbetsloshet
+      - sysselsattning
+      - minimilön
+      - fackforening
+      - kollektivavtal
+
+  ekonomi_och_hallbarhet:
+    description: "Miljöekonomi, externaliteter och hållbar utveckling."
+    terms:
+      - externaliteter
+      - miljöskatt
+      - koldioxidprissattning
+      - cirkular_ekonomi
+      - hallbar_utveckling
+
+  finansiella_marknader:
+    description: "Aktier, obligationer, derivat och riskhantering."
+    terms:
+      - aktie
+      - obligation
+      - riskhantering
+      - kapitalmarknad
+      - derivat
+
+  digital_ekonomi:
+    description: "Fintech, e-handel och digitala betalningssystem."
+    terms:
+      - fintech
+      - kryptovaluta
+      - blockchain
+      - digitala_plattformar
+      - e-handel
+
+  beteendeekonomi:
+    description: "Psykologiska faktorer som påverkar ekonomiska beslut."
+    terms:
+      - heuristics
+      - prospektteori
+      - nudge
+      - begransad_rationalitet
+      - sociala_normer
+
+  globalisering:
+    description: "Internationella organisationer, handelsbalans och globala flöden."
+    terms:
+      - globalisering
+      - wto
+      - imf
+      - handelsbalans
+      - multinationella_foretag
+
+  ekonomisk_tillvaxt:
+    description: "Faktorer bakom tillväxt, produktivitet och strukturella förändringar."
+    terms:
+      - teknologisk_utveckling
+      - humankapital
+      - produktivitet
+      - konkurrenskraft
+      - strukturella_forandringar
+
 terms:
   bnp:
     term_sv: "Bruttonationalprodukt (BNP)"
     definition_sv: "Värdet av alla varor och tjänster som produceras i ett land under ett år."
     definition_en: "The total value of all goods and services produced within a country in a year."
+
   inflation:
     term_sv: "Inflation"
     definition_sv: "En generell och ihållande ökning av prisnivån i samhället, vilket minskar pengarnas köpkraft."
     definition_en: "A general and sustained increase in the price level in society, reducing the purchasing power of money."
+
   utbud_efterfragan:
     term_sv: "Utbud och Efterfrågan"
     definition_sv: "Principen om hur priset på en vara eller tjänst bestäms av mängden som finns tillgänglig (utbud) och hur mycket konsumenterna vill köpa (efterfrågan)."
     definition_en: "The principle of how the price of a good or service is determined by the quantity available (supply) and how much consumers want to buy (demand)."
+
   budget:
     term_sv: "Budget"
     definition_sv: "En plan för inkomster och utgifter under en viss tidsperiod, används av både privatpersoner, företag och offentlig sektor."
     definition_en: "A plan for income and expenses over a specific period, used by individuals, companies, and the public sector."
+
   ranta:
     term_sv: "Ränta"
     definition_sv: "Kostnaden för att låna pengar, eller avkastningen på att spara pengar."
     definition_en: "The cost of borrowing money, or the return on saving money."
+
   monopol:
     term_sv: "Monopol"
     definition_sv: "En marknadssituation där det endast finns en säljare av en viss vara eller tjänst."
     definition_en: "A market situation where there is only one seller of a particular good or service."
+
   oligopol:
     term_sv: "Oligopol"
     definition_sv: "En marknadssituation där ett fåtal stora företag dominerar marknaden."
     definition_en: "A market situation where a few large companies dominate the market."
+
   priselasticitet:
     term_sv: "Priselasticitet"
     definition_sv: "Ett mått på hur känslig efterfrågan på en vara är för prisförändringar."
     definition_en: "A measure of how sensitive the demand for a good is to price changes."
+
   marknadsjamvikt:
     term_sv: "Marknadsjämvikt"
     definition_sv: "Det pris och den kvantitet där utbudet av en vara är lika stort som efterfrågan."
     definition_en: "The price and quantity at which the supply of a good equals the demand."
+
   export:
     term_sv: "Export"
     definition_sv: "Försäljning av varor och tjänster till andra länder."
     definition_en: "Selling goods and services to other countries."
+
   import:
     term_sv: "Import"
     definition_sv: "Inköp av varor och tjänster från andra länder."
     definition_en: "Purchasing goods and services from other countries."
+
   valutakurs:
     term_sv: "Valutakurs"
     definition_sv: "Priset på ett lands valuta uttryckt i ett annat lands valuta."
     definition_en: "The price of one country's currency expressed in another country's currency."
+
   tull:
     term_sv: "Tull"
     definition_sv: "En skatt som läggs på importerade varor."
     definition_en: "A tax imposed on imported goods."
+
   frihandel:
     term_sv: "Frihandel"
     definition_sv: "Internationell handel utan handelshinder som tullar och kvoter."
     definition_en: "International trade without trade barriers such as tariffs and quotas."
 
+  skatter:
+    term_sv: "Skatter"
+    definition_sv: "Tvångsavgifter som betalas till staten för att finansiera offentlig verksamhet."
+    definition_en: "Mandatory payments made to the government to finance public services."
+
+  offentlig_upphandling:
+    term_sv: "Offentlig upphandling"
+    definition_sv: "Processen där myndigheter köper varor och tjänster från privata leverantörer."
+    definition_en: "The process by which public authorities purchase goods and services from private suppliers."
+
+  regeringens_budget:
+    term_sv: "Regeringens budget"
+    definition_sv: "Statens plan för inkomster och utgifter under ett budgetår."
+    definition_en: "The government's plan for revenues and expenditures for a fiscal year."
+
+  offentliga_tjanster:
+    term_sv: "Offentliga tjänster"
+    definition_sv: "Tjänster som tillhandahålls av den offentliga sektorn, såsom utbildning och sjukvård."
+    definition_en: "Services provided by the public sector, such as education and healthcare."
+
+  statsskuld:
+    term_sv: "Statsskuld"
+    definition_sv: "Summan av statens upplåning över tid, totalt utestående skuld."
+    definition_en: "The total amount of government borrowing outstanding over time."
+
+  expansiv_penningpolitik:
+    term_sv: "Expansiv penningpolitik"
+    definition_sv: "Centralbankens åtgärder för att öka penningmängden och sänka räntor för att stimulera ekonomin."
+    definition_en: "Central bank measures to increase the money supply and lower interest rates to stimulate the economy."
+
+  stram_penningpolitik:
+    term_sv: "Stram penningpolitik"
+    definition_sv: "Centralbankens åtgärder för att minska penningmängden och höja räntor för att dämpa inflationen."
+    definition_en: "Central bank measures to decrease the money supply and raise interest rates to curb inflation."
+
+  riksbankens_styrranta:
+    term_sv: "Riksbankens styrränta"
+    definition_sv: "Den ränta som Riksbanken sätter som referens för andra räntor i ekonomin."
+    definition_en: "The rate set by the Riksbank as a reference for other interest rates in the economy."
+
+  finanspolitik:
+    term_sv: "Finanspolitik"
+    definition_sv: "Statens användning av budgeten för att påverka ekonomin genom skatter och offentliga utgifter."
+    definition_en: "The government's use of the budget to influence the economy through taxes and public spending."
+
+  penningmangd:
+    term_sv: "Penningmängd"
+    definition_sv: "Den totala mängden pengar i ett lands ekonomi."
+    definition_en: "The total amount of money in an economy."
+
+  arbetsloshet:
+    term_sv: "Arbetslöshet"
+    definition_sv: "Andelen av arbetskraften som är utan arbete men aktivt söker jobb."
+    definition_en: "The share of the labor force that is without work but actively seeking employment."
+
+  sysselsattning:
+    term_sv: "Sysselsättning"
+    definition_sv: "Andelen av befolkningen som har ett arbete."
+    definition_en: "The proportion of the population that is employed."
+
+  minimilön:
+    term_sv: "Minimilön"
+    definition_sv: "Den lägsta lagstadgade eller överenskomna lön som arbetsgivare får betala."
+    definition_en: "The lowest legally or collectively agreed wage that employers can pay."
+
+  fackforening:
+    term_sv: "Fackförening"
+    definition_sv: "Organisation som företräder arbetstagare i löne- och arbetsvillkorsförhandlingar."
+    definition_en: "An organization representing workers in wage and employment negotiations."
+
+  kollektivavtal:
+    term_sv: "Kollektivavtal"
+    definition_sv: "Avtal mellan fackförening och arbetsgivare som reglerar löner och arbetsvillkor."
+    definition_en: "Agreement between a union and employers that regulates wages and working conditions."
+
+  externaliteter:
+    term_sv: "Externaliteter"
+    definition_sv: "Ekonomiska sidoeffekter av en aktivitet som påverkar tredje part utan motsvarande kompensation."
+    definition_en: "Economic side effects of an activity that affect third parties without compensation."
+
+  miljöskatt:
+    term_sv: "Miljöskatt"
+    definition_sv: "Skatt på varor eller aktiviteter som orsakar miljöskador."
+    definition_en: "Tax on goods or activities that cause environmental damage."
+
+  koldioxidprissattning:
+    term_sv: "Koldioxidprissättning"
+    definition_sv: "System för att sätta ett pris på utsläpp av koldioxid, t.ex. via skatt eller handel med utsläppsrätter."
+    definition_en: "System to price carbon dioxide emissions, e.g., through taxes or emissions trading."
+
+  cirkular_ekonomi:
+    term_sv: "Cirkulär ekonomi"
+    definition_sv: "Ekonomiskt system som återanvänder resurser för att minimera avfall."
+    definition_en: "An economic system that reuses resources to minimize waste."
+
+  hallbar_utveckling:
+    term_sv: "Hållbar utveckling"
+    definition_sv: "Utveckling som tillgodoser dagens behov utan att äventyra framtida generationers behov."
+    definition_en: "Development that meets present needs without compromising the ability of future generations to meet their own."
+
+  aktie:
+    term_sv: "Aktie"
+    definition_sv: "En andel i ett aktiebolag som ger äganderätt och ofta rätt till utdelning."
+    definition_en: "A share in a corporation that grants ownership rights and often dividend entitlement."
+
+  obligation:
+    term_sv: "Obligation"
+    definition_sv: "Värdepapper utgivna av stater eller företag med fasta ränteutbetalningar."
+    definition_en: "Debt securities issued by governments or corporations with fixed interest payments."
+
+  riskhantering:
+    term_sv: "Riskhantering"
+    definition_sv: "Process för att identifiera, analysera och hantera finansiella risker."
+    definition_en: "The process of identifying, analyzing, and managing financial risks."
+
+  kapitalmarknad:
+    term_sv: "Kapitalmarknad"
+    definition_sv: "Marknader där långfristiga värdepapper som aktier och obligationer handlas."
+    definition_en: "Markets where long-term securities such as stocks and bonds are traded."
+
+  derivat:
+    term_sv: "Derivat"
+    definition_sv: "Finansiella instrument vars värde baseras på underliggande tillgångar."
+    definition_en: "Financial instruments whose value is derived from underlying assets."
+
+  fintech:
+    term_sv: "Fintech"
+    definition_sv: "Teknologiska innovationer inom finanssektorn, som digitala betalningar och appar."
+    definition_en: "Technological innovations in the financial sector, such as digital payments and apps."
+
+  kryptovaluta:
+    term_sv: "Kryptovaluta"
+    definition_sv: "Digital valuta som använder kryptografi för säkerhet, t.ex. Bitcoin."
+    definition_en: "Digital currency that uses cryptography for security, e.g. Bitcoin."
+
+  blockchain:
+    term_sv: "Blockchain"
+    definition_sv: "Distribuerad databas som lagrar transaktioner i kedjade block."
+    definition_en: "A distributed ledger that stores transactions in chained blocks."
+
+  digitala_plattformar:
+    term_sv: "Digitala plattformar"
+    definition_sv: "Nätverkstjänster som förmedlar kontakt mellan olika användare, till exempel nätbutiker."
+    definition_en: "Network services that facilitate interactions between different users, such as online marketplaces."
+
+  e-handel:
+    term_sv: "E-handel"
+    definition_sv: "Köp och försäljning av varor och tjänster över internet."
+    definition_en: "Buying and selling goods and services over the internet."
+
+  heuristics:
+    term_sv: "Heuristiker"
+    definition_sv: "Förenklade tumregler som människor använder för att fatta ekonomiska beslut."
+    definition_en: "Simplified rules of thumb people use to make economic decisions."
+
+  prospektteori:
+    term_sv: "Prospektteori"
+    definition_sv: "Teori som beskriver hur människor fattar beslut under osäkerhet och risk."
+    definition_en: "Theory that describes how people make decisions under uncertainty and risk."
+
+  nudge:
+    term_sv: "Nudge"
+    definition_sv: "Små utformningar i beslutsmiljön som påverkar människors beteende utan tvång."
+    definition_en: "Small design changes in the decision environment that influence behavior without coercion."
+
+  begransad_rationalitet:
+    term_sv: "Begränsad rationalitet"
+    definition_sv: "Idén att människor har begränsad förmåga att bearbeta information och fatta helt rationella beslut."
+    definition_en: "The idea that people have limited capacity to process information and make fully rational decisions."
+
+  sociala_normer:
+    term_sv: "Sociala normer"
+    definition_sv: "Oskrivna regler som påverkar individers ekonomiska beteende i samhället."
+    definition_en: "Unwritten rules that influence individuals' economic behavior in society."
+
+  globalisering:
+    term_sv: "Globalisering"
+    definition_sv: "Processen där länder och ekonomier blir allt mer sammanlänkade."
+    definition_en: "The process by which countries and economies become increasingly interconnected."
+
+  wto:
+    term_sv: "Världshandelsorganisationen (WTO)"
+    definition_sv: "Internationell organisation som reglerar handel mellan medlemsländer."
+    definition_en: "International organization that regulates trade among member countries."
+
+  imf:
+    term_sv: "Internationella valutafonden (IMF)"
+    definition_sv: "Organisation som stödjer finansiell stabilitet och ger lån till medlemsländer."
+    definition_en: "Organization that supports financial stability and provides loans to member countries."
+
+  handelsbalans:
+    term_sv: "Handelsbalans"
+    definition_sv: "Skillnaden mellan värdet av ett lands export och import."
+    definition_en: "The difference between the value of a country's exports and imports."
+
+  multinationella_foretag:
+    term_sv: "Multinationella företag"
+    definition_sv: "Företag som bedriver verksamhet i flera länder."
+    definition_en: "Companies that operate in multiple countries."
+
+  teknologisk_utveckling:
+    term_sv: "Teknologisk utveckling"
+    definition_sv: "Framsteg i teknik som förbättrar produktionsprocesser och effektivitet."
+    definition_en: "Advancements in technology that improve production processes and efficiency."
+
+  humankapital:
+    term_sv: "Humankapital"
+    definition_sv: "Människors kunskaper, färdigheter och erfarenheter som bidrar till produktion."
+    definition_en: "Individuals' knowledge, skills, and experience that contribute to production."
+
+  produktivitet:
+    term_sv: "Produktivitet"
+    definition_sv: "Mängden produktion per enhet insats, till exempel arbetskraft."
+    definition_en: "The amount of output produced per unit of input, such as labor."
+
+  konkurrenskraft:
+    term_sv: "Konkurrenskraft"
+    definition_sv: "Ett lands eller företags förmåga att konkurrera på internationella marknader."
+    definition_en: "A country’s or firm’s ability to compete in international markets."
+
+  strukturella_forandringar:
+    term_sv: "Strukturella förändringar"
+    definition_sv: "Långsiktiga förändringar i ekonomins struktur, till exempel övergång från jordbruk till industri."
+    definition_en: "Long-term changes in the structure of the economy, such as the shift from agriculture to industry."
