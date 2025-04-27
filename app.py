@@ -24,7 +24,7 @@ from database import init_db, activity_log, retrieve_relevant_terms, get_progres
 from topic_selector import select_topic_thompson, update_bandit_model  # Use refactored module
 from data_loader import load_terms_from_yaml
 from models import llm, evaluation_llm # Import LLM instances
-from chains import main_chain, evaluate_turn_success # Import chains and evaluation function
+from chains import main_chain, evaluate_turn_success, explain_evaluation # Import chains and evaluation functions (including explanation)
 
 # --- Application Setup --- #
 
@@ -116,7 +116,15 @@ async def main(message: cl.Message):
 
     # --- Store Current Evaluation for *Next* Turn --- #
     cl.user_session.set(SESSION_KEY_LAST_EVAL_FEEDBACK, current_evaluation_result)
-    print(f"Stored Evaluation Feedback for Next Turn: {current_evaluation_result}")
+    # --- 5. Generate Evaluation Explanation ---
+    evaluation_explanation = ""
+    if evaluation_llm:
+        evaluation_explanation = await explain_evaluation(
+            topic=selected_topic_for_turn,
+            user_message=user_message_content,
+            retrieved_context=retrieved_context_str
+        )
+    print(f"Evaluation Explanation: {evaluation_explanation}")
 
     # --- 4. Generate Main Response using the Chain --- #
     final_response = LLM_DISABLED_MESSAGE
@@ -128,11 +136,28 @@ async def main(message: cl.Message):
             print("Invoking main conversational chain...")
             chain_input = {
                 "user_message": user_message_content,
-                "retrieved_terms": retrieved_terms, # Pass the list of dicts
+                "retrieved_terms": retrieved_terms,
                 "chat_history": chat_history,
                 "focus_topic": selected_topic_for_turn,
-                "evaluation_feedback": previous_evaluation_feedback # Pass the *previous* turn's feedback
+                "evaluation_feedback": previous_evaluation_feedback,
+                "evaluation_explanation": evaluation_explanation
             }
+
+            # Add evaluation feedback banner if available
+            if current_evaluation_result in ("progress", "setback"):
+                stats = get_progress_summary().get(selected_topic_for_turn, {})
+                succ = stats.get("successful_attempts", 0)
+                tot = stats.get("total_attempts", 0)
+                rate = stats.get("success_rate", 0)
+                emoji = "✅" if current_evaluation_result == "progress" else "❌"
+                color = "green" if current_evaluation_result == "progress" else "red"
+                # Prepare plain Markdown feedback with emoji and bold
+                status_text = 'Progress made' if current_evaluation_result == 'progress' else 'Setback'
+                feedback_line = (
+                    f"{emoji} **{status_text} in {selected_topic_for_turn}!** "
+                    f"Current progress: {succ}/{tot} ({rate}% success)\n\n"
+                )
+                await cl.Message(content=feedback_line).send()
 
             # Add prominent topic header to response
             topic_header = f"**{TOPIC_LABEL}:** {selected_topic_for_turn}\n\n"

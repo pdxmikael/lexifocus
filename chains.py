@@ -8,7 +8,8 @@ from config import (
     EVALUATION_PROMPT_SYSTEM,
     MAIN_PROMPT_SYSTEM,
     CHAT_ROLE_USER,
-    CHAT_ROLE_AI
+    CHAT_ROLE_AI,
+    EVALUATION_EXPLANATION_SYSTEM
 )
 
 # --- Evaluation Chain Setup --- #
@@ -75,3 +76,34 @@ async def evaluate_turn_success(topic: str, user_message: str, retrieved_context
     except Exception as e:
         print(f"Error during LLM evaluation: {e}")
         return "no_change"
+
+# --- Evaluation Explanation Chain Setup --- #
+
+from langchain.prompts import ChatPromptTemplate as _ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser as _StrOutputParser
+
+EVALUATION_EXPLANATION_PROMPT_TEMPLATE = _ChatPromptTemplate.from_messages([
+    ("system", EVALUATION_EXPLANATION_SYSTEM),
+])
+
+evaluation_explanation_chain = (
+    EVALUATION_EXPLANATION_PROMPT_TEMPLATE
+    | evaluation_llm
+    | _StrOutputParser()
+) if evaluation_llm else None
+
+async def explain_evaluation(topic: str, user_message: str, retrieved_context: str) -> str:
+    """Returns a 2-3 sentence explanation for the evaluation result."""
+    if not evaluation_explanation_chain:
+        return ""
+    input_data = {
+        "topic": topic,
+        "user_message": user_message,
+        "retrieved_context": retrieved_context if retrieved_context else "None provided."
+    }
+    try:
+        explanation = await evaluation_explanation_chain.ainvoke(input_data)
+        return explanation.strip()
+    except Exception as e:
+        print(f"Error during evaluation explanation: {e}")
+        return ""

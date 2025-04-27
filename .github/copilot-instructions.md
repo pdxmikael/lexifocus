@@ -29,7 +29,7 @@ The application is developed on VSCode on Windows within a virtual Python enviro
 
 # DEVELOPMENT PLAN
 
-Current step to implement: #18
+Current step to implement: #20
 
 1. ~~**Set up Project Structure:** Create the basic project structure for a LangChain/Chainlit application, including `app.py`, configuration files, and directories for data and database.~~
 2. ~~**Implement Basic Chainlit App:** In `app.py`, set up a minimal Chainlit application with basic chat functionality using LangChain.~~
@@ -48,10 +48,12 @@ Current step to implement: #18
 15. ~~**Implement Adaptive Topic Selection (Initial):** Select the next focus topic using a mastery-threshold (<80%) or round-robin strategy, storing it in session.~~
 16. ~~**Modify Prompt for Topic:** Prepend or append a clear "Focus topic: <selected_topic>" line in the LLM prompt.~~
 17. **Implement Thompson Sampling:** Replace the mastery-threshold selector with a Thompson Sampling bandit over topics.  
-18. **Update Bandit Model:** After each turn's evaluation, update the alpha/beta parameters for the used topic.  
-19. **Add Response Mode Control:** Implement in-chat controls (buttons/commands) to adjust LLM verbosity or style.  
-20. **Document Application:** Write or update `README.md` with setup and usage instructions.  
-21. **(Optional) Visualize Progress:** Enhance progress UI with charts or plots (e.g., via Matplotlib/Plotly).  
+18. **Update Bandit Model:** After each turn's evaluation, update the alpha/beta parameters for the used topic.
+19. ~~**Add evaluation feedback:** Whenever positive or negative feedback is delivered from the evaluation LLM, inject this into the next LLM response (e.g. Progress made in international_trade! Current progress: 3/6 (50%)). Color these lines green or red depending on success or failure.~~
+20. **Add Response Mode Control:** Implement in-chat controls via ChatSettings to adjust LLM verbosity (slider, 5 settings) and style (factual/friendly/playful slider, three settings). Expose the control in the UI. These should only affect the response, not the evaluation.
+21. **Add Explain Action:** Implement in-chat Action button (similar to Progress Report) to immediately explain concepts in the prior chat in more detail, including translating the term into the native language.
+22. **Document Application:** Write or update `README.md` with setup and usage instructions.  
+23. **(Optional) Visualize Progress:** Enhance progress UI with charts or plots (e.g., via Matplotlib/Plotly).  
 
 # USER TESTING AND HUMAN ITERATION
 
