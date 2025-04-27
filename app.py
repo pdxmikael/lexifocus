@@ -1,3 +1,4 @@
+import os
 import chainlit as cl
 from chainlit.action import Action # Import Action
 from chainlit.input_widget import Slider, Select
@@ -96,10 +97,18 @@ async def on_show_progress(action: Action):
     # Remove the button after displaying progress (optional)
     # await action.remove()
 
+@cl.on_settings_update
+async def on_settings_update(settings: dict):
+    cl.user_session.set("chat_settings", settings)
+
 @cl.on_message
-async def main(message: cl.Message, settings: dict = None):
-    if settings is None:
-        settings = {}
+async def main(message: cl.Message):
+    settings = cl.user_session.get("chat_settings", {})
+    print(f"Received settings: {settings}")
+    debug_log(f"--- SETTINGS DICT ---\n{settings}")
+    verbosity_level = settings.get("verbosity_level", DEFAULT_VERBOSITY_LEVEL)
+    response_style = settings.get("response_style", STYLE_OPTIONS[1])
+
     user_message_content = message.content
     print(f"\n--- Turn Start ---")
     print(f"User message: {user_message_content}")
@@ -108,10 +117,6 @@ async def main(message: cl.Message, settings: dict = None):
     chat_history = cl.user_session.get(SESSION_KEY_CHAT_HISTORY, [])
     previous_evaluation_feedback = cl.user_session.get(SESSION_KEY_LAST_EVAL_FEEDBACK, INITIAL_EVAL_FEEDBACK)
     print(f"Previous Turn Evaluation Feedback (for current prompt): {previous_evaluation_feedback}")
-
-    # --- Get current ChatSettings from argument --- #
-    verbosity_level = settings.get("verbosity_level", DEFAULT_VERBOSITY_LEVEL)
-    response_style = settings.get("response_style", STYLE_OPTIONS[1])  # Default to 'friendly'
 
     # --- 1. Retrieve Relevant Terms --- #
     retrieved_terms = retrieve_relevant_terms(user_message_content, top_n=3, similarity_threshold=0.25)
@@ -164,10 +169,13 @@ async def main(message: cl.Message, settings: dict = None):
                 "focus_topic": selected_topic_for_turn,
                 "evaluation_feedback": previous_evaluation_feedback,
                 "evaluation_explanation": evaluation_explanation,
-                # --- Pass ChatSettings to the chain --- #
                 "verbosity_level": verbosity_level,
                 "response_style": response_style
             }
+            # --- Debug log the system prompt and input ---
+            from chains import MAIN_PROMPT_SYSTEM
+            debug_log(f"\n--- SYSTEM PROMPT ---\n{MAIN_PROMPT_SYSTEM.format(**{k: chain_input.get(k, '') for k in ['focus_topic','verbosity_level','response_style','evaluation_feedback','evaluation_explanation','retrieved_context','chat_history']})}")
+            debug_log(f"--- USER MESSAGE ---\n{user_message_content}")
 
             # Add evaluation feedback banner if available
             if current_evaluation_result in ("progress", "setback"):
@@ -192,8 +200,8 @@ async def main(message: cl.Message, settings: dict = None):
 
             async for chunk in main_chain.astream(chain_input):
                 await msg.stream_token(chunk)
-
             final_response = msg.content
+            debug_log(f"--- LLM RESPONSE ---\n{final_response}")
 
             # Update the message content and actions (only progress action)
             msg.actions = actions_for_response
@@ -215,3 +223,8 @@ async def main(message: cl.Message, settings: dict = None):
 
     print(f"AI Response: {final_response}")
     print(f"--- Turn End ---")
+
+def debug_log(message: str):
+    if os.getenv('LEXIFOCUS_DEBUG') == '1':
+        with open('debug_log.txt', 'a', encoding='utf-8') as f:
+            f.write(message + '\n')

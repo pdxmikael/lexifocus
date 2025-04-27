@@ -1,6 +1,14 @@
+import argparse
 import subprocess
 import sys
 import os
+
+parser = argparse.ArgumentParser(description="Run LexiFocus with optional debug logging.")
+parser.add_argument('--debug', action='store_true', help='Enable debug logging of prompts and responses')
+args = parser.parse_args()
+
+if args.debug:
+    os.environ['LEXIFOCUS_DEBUG'] = '1'
 
 # Get the directory of the run.py script
 script_dir = os.path.dirname(os.path.abspath(__file__))
