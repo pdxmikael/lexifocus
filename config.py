@@ -21,6 +21,7 @@ OPENAI_MODEL_NAME = os.getenv("OPENAI_MODEL_NAME", "gpt-4o-mini")
 # Session Keys
 SESSION_KEY_CHAT_HISTORY = "chat_history"
 SESSION_KEY_LAST_EVAL_FEEDBACK = "last_evaluation_feedback"
+SESSION_KEY_CURRENT_TOPIC = "current_topic"  # Key for storing the currently selected adaptive topic
 
 # Default/Initial Values
 INITIAL_EVAL_FEEDBACK = "N/A"

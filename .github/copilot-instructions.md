@@ -29,7 +29,7 @@ The application is developed on VSCode on Windows within a virtual Python enviro
 
 # DEVELOPMENT PLAN
 
-Current step to implement: #15
+Current step to implement: #16
 
 1.  ~~**Set up Project Structure:** Create the basic project structure for a LangChain/Chainlit application, including `app.py` (or similar main file), configuration files, and directories for data and database.~~
 2.  ~~**Implement Basic Chainlit App:** In `app.py`, set up a minimal Chainlit application with basic chat functionality using LangChain.~~
@@ -45,7 +45,7 @@ Current step to implement: #15
 12. ~~**Incorporate Evaluation Feedback:** Incorporate brief feedback based on the evaluation result (progress/setback/no_change from Step 10) into the system prompt or context provided to the main LLM (Step 8) for the *next* chat turn. This helps guide the LLM's response style or focus.~~
 13. ~~**Create Progress View:** Add a button within the Chainlit UI to display user progress.~~
 14. ~~**Implement Progress Logic:** Code the logic behind the progress view to query the `activity_log` table, calculate progress metrics (like percentage accuracy per topic), and display this data in the Chainlit interface.~~
-15. **Implement Adaptive Topic Selection (Initial):** Before the main LLM call (Step 8), add logic to select the next topic. *Handle initial selection (e.g., random or first topic) if no progress data exists.* Otherwise, query progress data (via `activity_log`) and use a simple strategy: prioritize topics with mastery below 80%. If all topics are above 80%, use a round-robin approach. Store the selected topic (e.g., in user session state).
+15. ~~**Implement Adaptive Topic Selection (Initial):** Before the main LLM call (Step 8), add logic to select the next topic. *Handle initial selection (e.g., random or first topic) if no progress data exists.* Otherwise, query progress data (via `activity_log`) and use a simple strategy: prioritize topics with mastery below 80%. If all topics are above 80%, use a round-robin approach. Store the selected topic (e.g., in user session state).~~
 16. **Modify Prompt for Topic:** Append a string like "Focus topic: <selected_topic>" to the system prompt or context sent to the main LLM (Step 8), using the topic selected in the previous step.
 17. **Test Adaptivity (Initial):** Perform end-to-end testing to ensure the chat conversation consistently focuses on topics where the user needs more practice, based on the tracked mastery data.
 18. **Implement Thompson Sampling:** Replace the mastery threshold topic selection logic (Step 15) with a Thompson Sampling algorithm. Use the success/failure counts per topic from the `activity_log` table as input for the bandit model (alpha/beta parameters for Beta distribution).

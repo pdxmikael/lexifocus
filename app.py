@@ -6,6 +6,7 @@ from config import (
     OPENAI_API_KEY, # Check if LLM is configured
     SESSION_KEY_CHAT_HISTORY,
     SESSION_KEY_LAST_EVAL_FEEDBACK,
+    SESSION_KEY_CURRENT_TOPIC,  # Current topic session key
     INITIAL_EVAL_FEEDBACK,
     DEFAULT_TOPIC,
     DEFAULT_EVALUATION_RESULT,
@@ -18,7 +19,7 @@ from config import (
     PROGRESS_ICON_NAME,
     PROGRESS_TOOLTIP
 )
-from database import init_db, activity_log, retrieve_relevant_terms, get_progress_summary # Import get_progress_summary
+from database import init_db, activity_log, retrieve_relevant_terms, get_progress_summary, get_all_topics  # Added get_all_topics
 from data_loader import load_terms_from_yaml
 from models import llm, evaluation_llm # Import LLM instances
 from chains import main_chain, evaluate_turn_success # Import chains and evaluation function
@@ -87,10 +88,25 @@ async def main(message: cl.Message):
     retrieved_context_str = "\n".join([f"- {t['term']} ({t['topic']}): {t['definition']} (Similarity: {t['similarity']:.2f})" for t in retrieved_terms]) if retrieved_terms else NO_RELEVANT_TERMS_MESSAGE
     print(f"Retrieved Context:\n{retrieved_context_str}")
 
-    # --- TODO: Step 16/19 - Select Topic --- #
-    # Placeholder topic selection: Use topic from the most relevant term or a default
-    selected_topic_for_turn = retrieved_terms[0]['topic'] if retrieved_terms else DEFAULT_TOPIC
-    print(f"Selected Topic (Placeholder): {selected_topic_for_turn}")
+    # --- Adaptive Topic Selection (Step 15) --- #
+    topics = get_all_topics()
+    progress_summary = get_progress_summary()
+    # Prioritize topics below 80% mastery
+    low_mastery = [t for t in topics if progress_summary.get(t, {}).get('success_rate', 0) < 80]
+    if low_mastery:
+        # Pick the topic with lowest success rate
+        selected_topic_for_turn = min(low_mastery, key=lambda t: progress_summary.get(t, {}).get('success_rate', 0))
+    else:
+        # Round-robin among all topics
+        prev_topic = cl.user_session.get(SESSION_KEY_CURRENT_TOPIC)
+        if prev_topic in topics:
+            idx = topics.index(prev_topic)
+            selected_topic_for_turn = topics[(idx + 1) % len(topics)]
+        else:
+            selected_topic_for_turn = topics[0] if topics else DEFAULT_TOPIC
+    # Store selected topic in session
+    cl.user_session.set(SESSION_KEY_CURRENT_TOPIC, selected_topic_for_turn)
+    print(f"Selected Topic: {selected_topic_for_turn}")
 
     # --- 2. Evaluate Current Turn Success --- #
     current_evaluation_result = DEFAULT_EVALUATION_RESULT

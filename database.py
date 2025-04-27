@@ -183,3 +183,12 @@ def get_progress_summary() -> dict[str, dict]:
             conn.close()
 
     return summary
+
+def get_all_topics() -> list[str]:
+    """Fetches all unique topics available in domain_embeddings."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT topic FROM domain_embeddings")
+    rows = cursor.fetchall()
+    conn.close()
+    return [row[0] for row in rows]
