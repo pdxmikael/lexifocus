@@ -20,7 +20,8 @@ from config import (
     PROGRESS_TOOLTIP,
     TOPIC_LABEL  # Label for the topic header
 )
-from database import init_db, activity_log, retrieve_relevant_terms, get_progress_summary, get_all_topics  # Added get_all_topics
+from database import init_db, activity_log, retrieve_relevant_terms, get_progress_summary, get_all_topics
+from topic_selector import select_topic_thompson, update_bandit_model  # Use refactored module
 from data_loader import load_terms_from_yaml
 from models import llm, evaluation_llm # Import LLM instances
 from chains import main_chain, evaluate_turn_success # Import chains and evaluation function
@@ -90,24 +91,11 @@ async def main(message: cl.Message):
     print(f"Retrieved Context:\n{retrieved_context_str}")
 
     # --- Adaptive Topic Selection (Step 15) --- #
-    topics = get_all_topics()
-    progress_summary = get_progress_summary()
-    # Prioritize topics below 80% mastery
-    low_mastery = [t for t in topics if progress_summary.get(t, {}).get('success_rate', 0) < 80]
-    if low_mastery:
-        # Pick the topic with lowest success rate
-        selected_topic_for_turn = min(low_mastery, key=lambda t: progress_summary.get(t, {}).get('success_rate', 0))
-    else:
-        # Round-robin among all topics
-        prev_topic = cl.user_session.get(SESSION_KEY_CURRENT_TOPIC)
-        if prev_topic in topics:
-            idx = topics.index(prev_topic)
-            selected_topic_for_turn = topics[(idx + 1) % len(topics)]
-        else:
-            selected_topic_for_turn = topics[0] if topics else DEFAULT_TOPIC
+    # --- Adaptive Topic Selection via Thompson Sampling (Step 17) ---
+    selected_topic_for_turn = select_topic_thompson()
     # Store selected topic in session
     cl.user_session.set(SESSION_KEY_CURRENT_TOPIC, selected_topic_for_turn)
-    print(f"Selected Topic: {selected_topic_for_turn}")
+    print(f"Selected Topic (Thompson Sampling): {selected_topic_for_turn}")
 
     # --- 2. Evaluate Current Turn Success --- #
     current_evaluation_result = DEFAULT_EVALUATION_RESULT
@@ -123,6 +111,8 @@ async def main(message: cl.Message):
     log_success = current_evaluation_result == "progress"
     activity_log(topic=selected_topic_for_turn, success=log_success)
     print(f"Activity Logged: Topic='{selected_topic_for_turn}', Success={log_success}")
+    # --- 4. Update Bandit Model (Step 18) ---
+    update_bandit_model(selected_topic_for_turn, log_success)
 
     # --- Store Current Evaluation for *Next* Turn --- #
     cl.user_session.set(SESSION_KEY_LAST_EVAL_FEEDBACK, current_evaluation_result)

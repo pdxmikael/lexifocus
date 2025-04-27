@@ -35,6 +35,15 @@ def init_db():
     )
     """)
 
+    # Create bandit_params table for Thompson Sampling
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS bandit_params (
+        topic TEXT PRIMARY KEY,
+        alpha INTEGER NOT NULL,
+        beta INTEGER NOT NULL
+    )
+    """)
+
     conn.commit()
     conn.close()
     print(f"Database initialized at {DB_PATH}")
@@ -192,3 +201,20 @@ def get_all_topics() -> list[str]:
     rows = cursor.fetchall()
     conn.close()
     return [row[0] for row in rows]
+
+def get_bandit_params() -> dict[str, tuple[int, int]]:
+    """Fetches or initializes bandit parameters (alpha/beta) for each topic."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    # Ensure each topic has initial parameters
+    for topic in get_all_topics():
+        cursor.execute(
+            "INSERT OR IGNORE INTO bandit_params (topic, alpha, beta) VALUES (?, ?, ?)",
+            (topic, 1, 1)
+        )
+    conn.commit()
+    # Retrieve parameters
+    cursor.execute("SELECT topic, alpha, beta FROM bandit_params")
+    rows = cursor.fetchall()
+    conn.close()
+    return {row[0]: (row[1], row[2]) for row in rows}
